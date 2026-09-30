@@ -1,0 +1,10 @@
+# Default: any teammate can review.
+# Security-sensitive files need the repo admin's review.
+# @mohanendrasidda = Sidd (repo admin).
+/.github/            @mohanendrasidda
+/.claude/            @mohanendrasidda
+/SECURITY.md         @mohanendrasidda
+/DATA_HANDLING.md    @mohanendrasidda
+/CLAUDE.md           @mohanendrasidda
+/.gitignore          @mohanendrasidda
+/.pre-commit-config.yaml @mohanendrasidda

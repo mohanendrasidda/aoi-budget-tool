@@ -1,0 +1,53 @@
+# --- Secrets: never commit ---
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+id_rsa*
+id_ed25519*
+credentials*.json
+service-account*.json
+secrets/
+
+# --- AOI / real data: never commit ---
+data/raw/
+data/private/
+exports/
+*.xlsx
+*.xls
+*.cet
+*.pdf
+!docs/**/*.pdf
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+.ipynb_checkpoints/
+
+# --- JS/TS ---
+node_modules/
+.next/
+dist/
+build/
+.turbo/
+*.tsbuildinfo
+
+# --- Editors / OS ---
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+
+# --- Local AI agent state (keep shared settings, ignore personal) ---
+.claude/settings.local.json
+CLAUDE.local.md
