@@ -10,7 +10,7 @@ Pre-design budget-range tool for AOI furniture sellers. During the first client 
 |---|---|---|
 | Mohanendra (Sidd) Siddha | `@mohanendrasidda` | Repo admin |
 | Mohammed Anas | `@TODO` | |
-| Colby Jochum | `@TODO` | |
+| Colby Jochum | `@WestHaddock` | |
 | Sam Sanketh | `@TODO` | |
 | Harshi Vallabhaneni | `@TODO` | |
 
