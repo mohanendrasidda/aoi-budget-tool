@@ -9,7 +9,7 @@ Pre-design budget-range tool for AOI furniture sellers. During the first client 
 | Name | GitHub | Role |
 |---|---|---|
 | Mohanendra (Sidd) Siddha | `@mohanendrasidda` | Repo admin |
-| Mohammed Anas | `@TODO` | |
+| Mohammed Anas | `@mhdan7s` | |
 | Colby Jochum | `@WestHaddock` | |
 | Sam Sanketh | `@TODO` | |
 | Harshi Vallabhaneni | `@TODO` | |
