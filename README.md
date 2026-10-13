@@ -45,3 +45,5 @@ cp .env.example .env          # fill in locally; .env is never committed
 ## Architecture decisions
 
 Recorded as short ADRs in [docs/decisions/](docs/decisions/). Stack is **not decided yet** (see ADR 0001).
+
+_Repository guardrails verified 2026-09-30 (see `docs/security/`)._
