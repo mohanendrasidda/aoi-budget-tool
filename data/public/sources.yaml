@@ -40,3 +40,27 @@ sources:
     name: OMNIA Partners office furniture contract (MillerKnoll), as described by LSU procurement
     url: https://lsu.edu/administration/ofa/procurement/a-z-policies-procedures/hermanmiller.php
     method: read; confirms co-op channel, no % published on that page
+  # Added 2026-10-14 from the public data-source research (see docs/data-collection-policy.md)
+  - id: steelcase-naspo-mo
+    name: Steelcase NASPO ValuePoint discount schedule, State of Missouri
+    url: https://steelcase.com/resources/documents/naspo-state-of-missouri-discount-schedule
+    method: read; discount bands entered by hand
+  - id: ne-contract-15378
+    name: State of Nebraska contract 15378 OC (Neutral Posture), incl. commercial pricing disclosure
+    url: https://das.nebraska.gov/materiel/purchasing/contracts/pdfs/15378(oc)awd.pdf
+    method: read; discount bands entered by hand
+  - id: af-furniture-cost-guide
+    name: US Air Force Furniture Cost Estimating Guide (2022), WBDG
+    url: https://www.wbdg.org/FFC/AF/AFCFS/AF-Furniture-Cost-Estimating-Guide.pdf
+    method: read; freight/install/handling percentages
+  - id: fred-ppi
+    name: BLS Producer Price Index, nonwood office furniture (PCU337214337214), via FRED
+    url: https://fred.stlouisfed.org/series/PCU337214337214
+    method: CSV download (fredgraph.csv?id=PCU337214337214), no key needed
+  - id: ne-dor-tax
+    name: Nebraska Department of Revenue, local sales and use tax rates
+    url: https://revenue.nebraska.gov/businesses/local-sales-and-use-tax-rates
+    method: read; verify rates each quarter
+# Collection note (2026-10-14): Herman Miller's Terms of Use prohibit automated downloading of site
+# content even where robots.txt allows the path, and Knoll's PDF host disallows all crawlers.
+# Fetch those price books manually, one at a time, or through AOI's dealer channel.
