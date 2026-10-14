@@ -49,6 +49,12 @@ AI agents (Claude Code, Copilot, etc.) are welcome. Rules:
 - Tests for AI-written logic are mandatory, not optional.
 - Agents follow [CLAUDE.md](CLAUDE.md). Agents never push to `main`, never touch `.env`, never see `data/raw/`.
 
+## Setup notes by OS
+
+- **Everyone:** run `./scripts/setup-dev.sh` once after cloning. It stops with an error if anything is wrong; "Done" means hooks are installed and passing.
+- **Windows:** run it in Git Bash (installed with Git for Windows) or WSL, not PowerShell. Install uv from https://astral.sh/uv.
+- **macOS:** if it stops with a `pyexpat` message, your Homebrew Python is broken. Run `uv tool install pre-commit`, then re-run the script.
+
 ## Things that will bite you
 
 | Situation | Do | Don't |
