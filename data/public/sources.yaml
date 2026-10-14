@@ -1,0 +1,42 @@
+# Public sources for v0/v1. Checked 2026-10-06 unless noted. See docs/data-collection-policy.md.
+sources:
+  - id: aoi-site
+    name: AOI Corporation website
+    url: https://www.aoicorp.com
+    use: scope (AOI is a MillerKnoll Certified Dealer; Omaha HQ, Lincoln office 8320 Cody Dr)
+    method: read
+  - id: hm-gsa-pricebooks
+    name: Herman Miller GSA price books (one PDF per product line)
+    url_pattern: https://www.hermanmiller.com/content/dam/hermanmiller/documents/pricing/government/PB_GSA_{CODE}.pdf
+    known_codes: [EWT, AOS, SYL, LCS, NAU, BOA, ZEP, HWT, RVA, BAY, NGS, HCL, SPT, SHA, HHC, CWB]
+    example: https://www.hermanmiller.com/content/dam/hermanmiller/documents/pricing/government/PB_GSA_EWT.pdf
+    example_facts: "Everywhere Tables: list $1,039-$1,540 common sizes; GSA discount 73.8% (SIN 33721); effective 2025-10-06"
+    robots_checked: "2026-10-06: no Disallow for /content/dam, no crawl-delay"
+    method: polite PDF download + parse
+  - id: geiger-gsa-pricebooks
+    name: Geiger (MillerKnoll) GSA price books
+    url_pattern: https://www.geigerfurniture.com/content/dam/hermanmiller/documents/pricing/government/PB_GSA_{CODE}.pdf
+    known_codes: [CMP]
+    note: "From search results; not yet opened. Verify before use."
+    method: polite PDF download + parse
+  - id: cw-fitout-2026
+    name: Cushman & Wakefield Office Fit Out Cost Guide, Americas 2026 (furniture page)
+    url: https://digital.cushmanwakefield.com/fitoutcostguide-03-2026-amer-regional-en-content-pds-office/42-43/
+    method: read; values entered by hand into benchmarks.csv
+  - id: jll-fitout-2026
+    name: JLL U.S. & Canada Office Fit-Out Cost Guide (published 2026-05-13)
+    url: https://www.jll.com/en-us/insights/us-canada-office-fit-out-cost-guide-2025/
+    method: read; context only
+  - id: gsa-workspace-2012
+    name: GSA Workspace Utilization and Allocation Benchmark (July 2012)
+    url: https://distributedteams.mo.gov/wp-content/uploads/2020/10/Workplace-Utilization-and-Allocation-Benchmark-review.pdf
+    method: read; values entered by hand
+  - id: sourcewell-steelcase
+    name: Sourcewell office furniture contract, Steelcase pricing document
+    url: https://files.sourcewell.org/public/Shared%20Documents/Solicitations/10745/00005116/Additional%20Documents/Steelcase%20Sourcewell%20Pricing.pdf
+    note: "From search results; not yet opened. Discount structure reference only."
+    method: download, read
+  - id: omnia-millerknoll
+    name: OMNIA Partners office furniture contract (MillerKnoll), as described by LSU procurement
+    url: https://lsu.edu/administration/ofa/procurement/a-z-policies-procedures/hermanmiller.php
+    method: read; confirms co-op channel, no % published on that page

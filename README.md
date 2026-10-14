@@ -32,6 +32,17 @@ cd aoi-budget-tool
 cp .env.example .env          # fill in locally; .env is never committed
 ```
 
+## Everyday commands
+
+```bash
+uv sync                                      # install exact versions from uv.lock
+uv run pytest                                # tests
+uv run ruff check && uv run ruff format      # lint + format
+uv run streamlit run app/streamlit_app.py    # run the app locally
+```
+
+Python 3.12 is managed by uv (ADR 0002), so no system or Homebrew Python is needed.
+
 ## Where things live
 
 | What | Where |

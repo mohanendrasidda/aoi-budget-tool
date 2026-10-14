@@ -4,10 +4,8 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
-  # Uncomment the one we pick once the stack is decided (ADR 0001):
-  # - package-ecosystem: "pip"
-  #   directory: "/"
-  #   schedule: { interval: "weekly" }
-  # - package-ecosystem: "npm"
-  #   directory: "/"
-  #   schedule: { interval: "weekly" }
+  # Python deps managed by uv (ADR 0002): updates pyproject.toml and uv.lock together
+  - package-ecosystem: "uv"
+    directory: "/"
+    schedule:
+      interval: "weekly"
