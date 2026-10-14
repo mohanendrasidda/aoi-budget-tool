@@ -64,3 +64,21 @@ sources:
 # Collection note (2026-10-14): Herman Miller's Terms of Use prohibit automated downloading of site
 # content even where robots.txt allows the path, and Knoll's PDF host disallows all crawlers.
 # Fetch those price books manually, one at a time, or through AOI's dealer channel.
+  - id: nu-regents
+    name: University of Nebraska Board of Regents agendas with materials (program statements; Bids and Contracts)
+    url: https://nebraska.edu/regents/agendas-minutes
+    robots_checked: "2026-10-14: nebraska.edu disallows only /archive/; docs subdomain has no robots.txt"
+    method: read; values entered by hand into eval_projects.csv
+  - id: lebtown-palmyra
+    name: LebTown news, Palmyra Area School District admin offices (2026-09-08)
+    url: https://lebtown.com/2026/09/08/palmyra-area-school-district-one-step-closer-to-moving-to-new-admin-offices/
+    method: read; values entered by hand
+  - id: dsm-council
+    name: City of Des Moines council communications 24-249 and 25-265
+    url: https://councildocs.dsm.city/communications/2025/25-265.pdf
+    area_source: https://www.businessrecord.com/what-you-need-to-know-about-the-citys-new-administration-building/
+    method: read; values entered by hand
+  - id: manassas-park
+    name: City of Manassas Park staff report, City Hall furniture and IT purchase (2021-12-14)
+    url: https://cms7files.revize.com/manassasparkva/Agenda%20Item%20-%20OCM_City%20Hall%20Furniture%20and%20IT%20Purchase.pdf
+    method: read; unit prices entered by hand
