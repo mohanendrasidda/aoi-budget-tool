@@ -1,0 +1,363 @@
+<title>AOI Budget Tool</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Source+Sans+3:wght@400;600&display=swap">
+<style>
+/* Layout: seller's conversation flow on the left (three steps), a sticky "budget card" on the right that updates live; phone stacks with the budget first. */
+:root{
+  --bg:#f3f4f2; --surface:#ffffff; --sunk:#e9ebe7; --fg:#1d2321; --muted:#5d6763; --line:#d6dad5;
+  --accent:#1f6b5c; --accent-soft:#dcebe6; --accent-fg:#ffffff;
+  --warn:#8a5a00; --warn-soft:#f6ecd8;
+  --band:#c9cfc9; --band-sel:#1f6b5c;
+  --display:"Archivo", "Helvetica Neue", Arial, sans-serif;
+  --body:"Source Sans 3", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#151917; --surface:#1d2220; --sunk:#252b28; --fg:#e6ebe8; --muted:#9aa6a0; --line:#323a36;
+  --accent:#5fb7a2; --accent-soft:#1d3a33; --accent-fg:#0f1b18;
+  --warn:#e2b25c; --warn-soft:#352a14;
+  --band:#3a433f; --band-sel:#5fb7a2; color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#151917; --surface:#1d2220; --sunk:#252b28; --fg:#e6ebe8; --muted:#9aa6a0; --line:#323a36;
+  --accent:#5fb7a2; --accent-soft:#1d3a33; --accent-fg:#0f1b18;
+  --warn:#e2b25c; --warn-soft:#352a14;
+  --band:#3a433f; --band-sel:#5fb7a2; color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;padding-inline:16px;padding-block:0 48px}
+.wrap{max-width:1120px;margin:0 auto}
+header.top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;padding-block:20px 16px;border-bottom:1px solid var(--line);margin-bottom:24px}
+.brand{display:flex;flex-direction:column;gap:2px}
+.brand h1{font-family:var(--display);font-weight:700;font-size:1.45rem;margin:0;letter-spacing:-.01em}
+.brand p{margin:0;color:var(--muted);font-size:.92rem}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{font-size:.78rem;font-weight:600;padding:4px 10px;border-radius:999px;background:var(--sunk);color:var(--muted)}
+.chip.warn{background:var(--warn-soft);color:var(--warn)}
+.grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr);gap:24px;align-items:start}
+@media (max-width:860px){.grid{grid-template-columns:1fr}.result{order:-1}}
+.steps{display:flex;flex-direction:column;gap:16px;min-width:0}
+.step{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px;display:flex;flex-direction:column;gap:14px}
+.step h2{font-family:var(--display);font-size:1.02rem;font-weight:600;margin:0;display:flex;align-items:baseline;gap:10px}
+.step h2 .n{font-size:.75rem;color:var(--accent);letter-spacing:.06em;text-transform:uppercase}
+.step .hint{margin:0;color:var(--muted);font-size:.9rem}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+label.f{display:flex;flex-direction:column;gap:5px;font-size:.85rem;font-weight:600;color:var(--muted)}
+input[type=text],input[type=number],select,textarea{font:inherit;font-size:1rem;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:7px;padding:9px 10px;width:100%;min-width:0}
+textarea{min-height:76px;resize:vertical}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible,.seg label:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+.seg{display:flex;flex-wrap:wrap;gap:8px}
+.seg input{position:absolute;opacity:0;pointer-events:none}
+.seg label{flex:1 1 140px;border:1px solid var(--line);border-radius:8px;padding:10px 12px;cursor:pointer;background:var(--bg);display:flex;flex-direction:column;gap:2px}
+.seg label b{font-weight:600;color:var(--fg);font-size:.95rem}
+.seg label span{font-size:.8rem;color:var(--muted)}
+.seg input:checked + label{border-color:var(--accent);background:var(--accent-soft)}
+.seg input:checked + label b{color:var(--accent)}
+.program{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px}
+.cnt{background:var(--sunk);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:6px}
+.cnt span{font-size:.8rem;color:var(--muted)}
+.cnt input{font-family:var(--display);font-weight:600;font-size:1.2rem;padding:4px 8px;background:var(--surface);font-variant-numeric:tabular-nums}
+.note{font-size:.82rem;color:var(--muted);margin:0}
+.range-in{display:flex;align-items:center;gap:10px}
+.range-in input{flex:1;accent-color:var(--accent)}
+.range-in output{font-variant-numeric:tabular-nums;font-weight:600;min-width:3.5ch;text-align:right}
+.ai{border:1px dashed var(--line);border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:8px;background:var(--bg)}
+.ai .tag{font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+/* result */
+.result{position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px);display:flex;flex-direction:column;gap:16px;min-width:0}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px;display:flex;flex-direction:column;gap:12px}
+.card.main{border-color:var(--accent);box-shadow:0 1px 0 var(--line)}
+.eyebrow{font-size:.74rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0}
+.big{font-family:var(--display);font-weight:700;font-size:clamp(1.7rem,4.2vw,2.35rem);line-height:1.1;font-variant-numeric:tabular-nums;margin:0;letter-spacing:-.015em}
+.psf{font-family:var(--display);font-weight:600;font-size:1.05rem;color:var(--accent);font-variant-numeric:tabular-nums;margin:0}
+.meta{color:var(--muted);font-size:.88rem;margin:0}
+.bands{display:flex;flex-direction:column;gap:6px}
+.bandrow{display:grid;grid-template-columns:62px 1fr;gap:8px;align-items:center;font-size:.78rem;color:var(--muted)}
+.track{position:relative;height:12px;background:var(--sunk);border-radius:6px}
+.track i{position:absolute;top:0;bottom:0;border-radius:6px;background:var(--band)}
+.track b{position:absolute;top:-3px;bottom:-3px;border-radius:5px;background:var(--band-sel)}
+.scale{display:grid;grid-template-columns:62px 1fr;gap:8px;font-size:.72rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.scale div{display:flex;justify-content:space-between}
+ul.q{margin:0;padding-left:1.1em;display:flex;flex-direction:column;gap:6px;font-size:.93rem}
+.summary{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:12px;font-size:.93rem;white-space:pre-wrap}
+.btns{display:flex;flex-wrap:wrap;gap:8px}
+button{font:inherit;font-weight:600;font-size:.9rem;border-radius:7px;padding:8px 14px;cursor:pointer;border:1px solid var(--accent);background:var(--accent);color:var(--accent-fg)}
+button.ghost{background:transparent;color:var(--accent)}
+.toast{font-size:.85rem;color:var(--accent);min-height:1.2em}
+details{border-top:1px solid var(--line);padding-top:10px}
+details summary{cursor:pointer;font-weight:600;font-size:.92rem}
+.asm{display:flex;flex-direction:column;gap:8px;margin-top:10px;font-size:.86rem}
+.asm div{display:grid;grid-template-columns:1fr auto;gap:8px;border-bottom:1px solid var(--line);padding-bottom:6px}
+.asm em{font-style:normal;color:var(--muted);font-size:.78rem;grid-column:1/-1}
+.check{display:flex;flex-direction:column;gap:6px;font-size:.92rem}
+.check label{display:flex;gap:8px;align-items:flex-start}
+.check input{accent-color:var(--accent);margin-top:4px}
+footer{margin-top:28px;color:var(--muted);font-size:.84rem;border-top:1px solid var(--line);padding-top:14px;display:flex;flex-direction:column;gap:6px}
+footer a{color:var(--accent)}
+@media (prefers-reduced-motion:no-preference){.track b{transition:left .25s ease,width .25s ease}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <h1>AOI Budget Tool</h1>
+      <p>A furniture budget range for the first client conversation, before anything is specified in CET.</p>
+    </div>
+    <div class="chips">
+      <span class="chip">Prototype</span>
+      <span class="chip warn">Public-data estimate</span>
+      <span class="chip">Example inputs loaded</span>
+    </div>
+  </header>
+
+  <div class="grid">
+    <form class="steps" id="f" autocomplete="off">
+      <section class="step" aria-labelledby="s1">
+        <h2 id="s1"><span class="n">Step 1</span>The project</h2>
+        <div class="row">
+          <label class="f" for="label">Project label
+            <input type="text" id="label" value="Example: 2nd floor office" placeholder="e.g. Downtown office refresh">
+          </label>
+          <label class="f" for="market">Market
+            <select id="market">
+              <option value="t3" selected>Lincoln / Omaha (Tier 3)</option>
+              <option value="t2">Tier 2 market</option>
+              <option value="t1">Tier 1 market</option>
+            </select>
+          </label>
+        </div>
+        <p class="note">No client names in this prototype. Lincoln and Omaha aren't listed in the benchmark, so they're treated as Tier 3.</p>
+        <div class="seg" role="radiogroup" aria-label="Project type">
+          <input type="radio" name="ptype" id="pt-new" value="new" checked><label for="pt-new"><b>New space</b><span>Everything new</span></label>
+          <input type="radio" name="ptype" id="pt-ref" value="refresh"><label for="pt-ref"><b>Refresh</b><span>Some furniture reused</span></label>
+          <input type="radio" name="ptype" id="pt-exp" value="expansion"><label for="pt-exp"><b>Expansion</b><span>Added area only</span></label>
+        </div>
+        <div id="reuseWrap" hidden>
+          <label class="f" for="reuse">Share of furniture reused</label>
+          <div class="range-in"><input type="range" id="reuse" min="0" max="75" step="5" value="25"><output id="reuseOut" for="reuse">25%</output></div>
+        </div>
+      </section>
+
+      <section class="step" aria-labelledby="s2">
+        <h2 id="s2"><span class="n">Step 2</span>The space</h2>
+        <div class="row">
+          <label class="f" for="sqft">Square feet
+            <input type="number" id="sqft" min="500" max="500000" step="100" value="12000" inputmode="numeric">
+          </label>
+          <label class="f" for="heads">Headcount <span style="font-weight:400">(blank = estimate)</span>
+            <input type="number" id="heads" min="1" max="5000" step="1" value="" placeholder="60" inputmode="numeric">
+          </label>
+        </div>
+        <div class="seg" role="radiogroup" aria-label="Space mix">
+          <input type="radio" name="mix" id="mx-open" value="open"><label for="mx-open"><b>Mostly open</b><span>~10% private offices</span></label>
+          <input type="radio" name="mix" id="mx-bal" value="balanced" checked><label for="mx-bal"><b>Balanced</b><span>~25% private offices</span></label>
+          <input type="radio" name="mix" id="mx-priv" value="private"><label for="mx-priv"><b>Private-heavy</b><span>~50% private offices</span></label>
+        </div>
+        <div>
+          <p class="eyebrow" style="margin-bottom:8px">Space program (edit any count)</p>
+          <div class="program">
+            <label class="cnt" for="c-ws"><span>Workstations</span><input type="number" id="c-ws" min="0"></label>
+            <label class="cnt" for="c-po"><span>Private offices</span><input type="number" id="c-po" min="0"></label>
+            <label class="cnt" for="c-cr"><span>Conference rooms</span><input type="number" id="c-cr" min="0"></label>
+            <label class="cnt" for="c-hd"><span>Huddle rooms</span><input type="number" id="c-hd" min="0"></label>
+          </div>
+          <p class="note" style="margin-top:8px">These counts give the client something concrete to react to and feed the designer hand-off. In this version the range is priced by area; the next version prices each setting.</p>
+        </div>
+      </section>
+
+      <section class="step" aria-labelledby="s3">
+        <h2 id="s3"><span class="n">Step 3</span>Finish level</h2>
+        <div class="seg" role="radiogroup" aria-label="Finish level">
+          <input type="radio" name="tier" id="t-good" value="good"><label for="t-good"><b>Good</b><span>Value lines, standard finishes</span></label>
+          <input type="radio" name="tier" id="t-better" value="better" checked><label for="t-better"><b>Better</b><span>Mid-range, some upgrades</span></label>
+          <input type="radio" name="tier" id="t-best" value="best"><label for="t-best"><b>Best</b><span>Premium lines and finishes</span></label>
+        </div>
+        <div class="ai">
+          <span class="tag">Coming next: notes to fields</span>
+          <label class="f" for="notes" style="font-weight:400">Conversation notes
+            <textarea id="notes" placeholder="e.g. about 60 people, wants mostly open plan, 4 offices for leadership, moving in spring">About 60 people, mostly open plan, leadership wants private offices, moving in spring.</textarea>
+          </label>
+          <p class="note">In the next version, AI reads these notes and fills in the steps above for you to check. It never sets prices; pricing stays rule-based.</p>
+        </div>
+      </section>
+    </form>
+
+    <aside class="result" aria-live="polite">
+      <div class="card main">
+        <p class="eyebrow">Preliminary furniture budget</p>
+        <p class="big" id="total">$0 to $0</p>
+        <p class="psf" id="psf">$0 to $0 per sq ft</p>
+        <p class="meta" id="metaline"></p>
+        <div class="bands" aria-label="Where this range sits among published market bands">
+          <div class="bandrow"><span>Tier 1</span><div class="track" id="b-t1"><i></i><b hidden></b></div></div>
+          <div class="bandrow"><span>Tier 2</span><div class="track" id="b-t2"><i></i><b hidden></b></div></div>
+          <div class="bandrow"><span>Tier 3</span><div class="track" id="b-t3"><i></i><b hidden></b></div></div>
+          <div class="scale"><span></span><div><span>$20/sf</span><span>$40/sf</span><span>$65/sf</span></div></div>
+        </div>
+        <p class="note">Grey bars: published furniture cost bands. Green: this estimate.</p>
+      </div>
+
+      <div class="card">
+        <p class="eyebrow">Ask next to narrow the range</p>
+        <ul class="q" id="questions"></ul>
+      </div>
+
+      <div class="card">
+        <p class="eyebrow">Client-ready summary</p>
+        <div class="summary" id="summary"></div>
+        <div class="btns"><button type="button" id="copy">Copy summary</button></div>
+        <div class="toast" id="toast" role="status"></div>
+        <details>
+          <summary>Assumptions and sources</summary>
+          <div class="asm" id="asm"></div>
+        </details>
+      </div>
+
+      <div class="card">
+        <p class="eyebrow">Hand-off to design</p>
+        <div class="check" id="handoff"></div>
+      </div>
+    </aside>
+  </div>
+
+  <footer>
+    <span>Prototype for discussion with AOI. All figures come from public benchmarks; AOI pricing, discounts and past projects will replace these assumptions.</span>
+    <span>Sources: <a href="https://digital.cushmanwakefield.com/fitoutcostguide-03-2026-amer-regional-en-content-pds-office/42-43/" target="_blank" rel="noopener">Cushman &amp; Wakefield Office Fit Out Cost Guide, Americas 2026 (furniture)</a> · <a href="https://distributedteams.mo.gov/wp-content/uploads/2020/10/Workplace-Utilization-and-Allocation-Benchmark-review.pdf" target="_blank" rel="noopener">GSA Workspace Utilization Benchmark (2012)</a></span>
+  </footer>
+</div>
+
+<script>
+(() => {
+  // Public bands, USD per sq ft (C&W 2026, furniture). Same values as data/public/benchmarks.csv.
+  const BANDS = { t1: [38.83, 60.67], t2: [27.54, 41.32], t3: [23.39, 35.09] };
+  const MARKET_NAME = { t1: "Tier 1 market", t2: "Tier 2 market", t3: "Lincoln / Omaha (Tier 3)" };
+  const SF_PER_PERSON = 200;                       // GSA 2012, US private sector average
+  const PRIVATE_SHARE = { open: 0.10, balanced: 0.25, private: 0.50 }; // assumption
+  const FINISH = { good: [0, 0.5], better: [0.25, 0.75], best: [0.5, 1] }; // position inside the band (assumption)
+  const FINISH_NAME = { good: "Good", better: "Better", best: "Best" };
+  const SCALE = [20, 65];
+
+  const $ = id => document.getElementById(id);
+  const val = name => document.querySelector(`input[name="${name}"]:checked`).value;
+  const usd = n => "$" + Math.round(n).toLocaleString("en-US");
+  const round = n => n >= 50000 ? Math.round(n / 1000) * 1000 : Math.round(n / 100) * 100;
+  let countsTouched = false;
+
+  // Pure function: inputs -> estimate. No side effects, easy to port to src/aoi_budget/.
+  function estimate(i) {
+    const [L, H] = BANDS[i.market];
+    const [a, b] = FINISH[i.finish];
+    const psfLow = L + a * (H - L), psfHigh = L + b * (H - L);
+    const reuse = i.ptype === "refresh" ? i.reuse / 100 : 0;
+    const low = round(i.sqft * psfLow * (1 - reuse));
+    const high = round(i.sqft * psfHigh * (1 - reuse));
+    return { low, high, effLow: low / i.sqft, effHigh: high / i.sqft, psfLow, psfHigh, reuse };
+  }
+  function program(heads, mix) {
+    const po = Math.round(heads * PRIVATE_SHARE[mix]);
+    return { ws: heads - po, po, cr: Math.max(1, Math.round(heads / 15)), hd: Math.max(1, Math.round(heads / 10)) };
+  }
+
+  function read() {
+    const sqft = Math.min(500000, Math.max(500, Number($("sqft").value) || 0));
+    const headsIn = Number($("heads").value);
+    const heads = headsIn > 0 ? Math.round(headsIn) : Math.max(1, Math.round(sqft / SF_PER_PERSON));
+    return {
+      label: $("label").value.trim() || "this project",
+      market: $("market").value, ptype: val("ptype"), reuse: Number($("reuse").value),
+      sqft, heads, headsGiven: headsIn > 0, mix: val("mix"), finish: val("tier"),
+      notes: $("notes").value.trim()
+    };
+  }
+
+  function paintBand(id, range, sel) {
+    const el = $(id), span = SCALE[1] - SCALE[0];
+    const pos = v => Math.min(100, Math.max(0, (v - SCALE[0]) / span * 100));
+    const bar = el.querySelector("i"), mark = el.querySelector("b");
+    bar.style.left = pos(range[0]) + "%"; bar.style.width = (pos(range[1]) - pos(range[0])) + "%";
+    if (sel) { mark.hidden = false; mark.style.left = pos(sel[0]) + "%"; mark.style.width = Math.max(1.5, pos(sel[1]) - pos(sel[0])) + "%"; }
+    else mark.hidden = true;
+  }
+
+  function render() {
+    const i = read();
+    $("reuseWrap").hidden = i.ptype !== "refresh";
+    $("reuseOut").value = i.reuse + "%";
+    $("heads").placeholder = String(Math.round(i.sqft / SF_PER_PERSON));
+    if (!countsTouched) {
+      const p = program(i.heads, i.mix);
+      $("c-ws").value = p.ws; $("c-po").value = p.po; $("c-cr").value = p.cr; $("c-hd").value = p.hd;
+    }
+    const e = estimate(i);
+    $("total").textContent = `${usd(e.low)} to ${usd(e.high)}`;
+    $("psf").textContent = `$${e.effLow.toFixed(2)} to $${e.effHigh.toFixed(2)} per sq ft`;
+    const scope = i.ptype === "expansion" ? "added area" : "space";
+    $("metaline").textContent = `${i.sqft.toLocaleString("en-US")} sq ft of ${scope}, about ${i.heads} people, ${FINISH_NAME[i.finish]} finish` + (e.reuse ? `, ${Math.round(e.reuse * 100)}% reused` : "") + ".";
+    ["t1", "t2", "t3"].forEach(t => paintBand("b-" + t, BANDS[t], t === i.market ? [e.psfLow, e.psfHigh] : null));
+
+    const q = [];
+    if (!i.headsGiven) q.push(`How many people will sit here? (estimated ${i.heads} from square footage)`);
+    q.push(countsTouched ? "Walk the space program with the client: anything missing, like a café, reception or storage?" : "Who needs a private office, and how many meeting rooms do they use today?");
+    if (i.ptype === "new") q.push("Is any existing furniture worth reusing? It can lower the budget.");
+    if (i.ptype === "refresh") q.push("Which pieces are being reused? Confirm their condition before counting on them.");
+    q.push("Any preferred brands or product lines?");
+    q.push("Move-in date and any phasing? Lead times can drive product choices.");
+    $("questions").innerHTML = "";
+    q.forEach(t => { const li = document.createElement("li"); li.textContent = t; $("questions").appendChild(li); });
+
+    const summary =
+`Preliminary furniture budget for ${i.label}
+${usd(e.low)} to ${usd(e.high)} (about $${e.effLow.toFixed(0)} to $${e.effHigh.toFixed(0)} per sq ft)
+${i.sqft.toLocaleString("en-US")} sq ft, about ${i.heads} people, ${FINISH_NAME[i.finish]} finish level${e.reuse ? `, with about ${Math.round(e.reuse * 100)}% of furniture reused` : ""}.
+
+This is an early range based on published market benchmarks, before any product is selected. We'll narrow it once we confirm headcount, the mix of offices and open seating, and your product preferences.`;
+    $("summary").textContent = summary;
+
+    const asm = [
+      ["Furniture cost band", `$${BANDS[i.market][0].toFixed(2)} to $${BANDS[i.market][1].toFixed(2)} per sq ft`, "Cushman & Wakefield Fit Out Cost Guide 2026, " + MARKET_NAME[i.market]],
+      ["Market for Lincoln / Omaha", "Tier 3", "Assumption: not listed in the guide; nearest listed peers are Tier 3"],
+      ["Finish level placement", { good: "lower half", better: "middle half", best: "upper half" }[i.finish] + " of band", "Assumption until AOI pricing is in"],
+      ["Square feet per person", `${SF_PER_PERSON} sq ft`, "GSA benchmark (2012), US private sector; likely high for today"],
+      ["Private office share", Math.round(PRIVATE_SHARE[i.mix] * 100) + "%", "Assumption by space mix preset"],
+      ["Meeting rooms", "1 conference per 15 people, 1 huddle per 10", "Assumption to confirm with AOI"]
+    ];
+    if (e.reuse) asm.push(["Reuse", Math.round(e.reuse * 100) + "% of cost removed", "Simplification: assumes reused items match the mix"]);
+    $("asm").innerHTML = "";
+    asm.forEach(([k, v, s]) => { const d = document.createElement("div"); d.innerHTML = "<span></span><b></b><em></em>"; d.children[0].textContent = k; d.children[1].textContent = v; d.children[2].textContent = s; $("asm").appendChild(d); });
+
+    const p = { ws: $("c-ws").value, po: $("c-po").value, cr: $("c-cr").value, hd: $("c-hd").value };
+    const items = [
+      [`Square footage confirmed (${i.sqft.toLocaleString("en-US")} sq ft)`, true],
+      [`Headcount confirmed (${i.heads})`, i.headsGiven],
+      [`Space program: ${p.ws} workstations, ${p.po} offices, ${p.cr} conference, ${p.hd} huddle`, countsTouched],
+      [`Finish level agreed (${FINISH_NAME[i.finish]})`, false],
+      ["Budget range shared with the client", false],
+      ["Conversation notes attached", i.notes.length > 0]
+    ];
+    const box = $("handoff"), prev = {};
+    box.querySelectorAll("input").forEach(c => prev[c.dataset.k] = c.checked);
+    box.innerHTML = "";
+    items.forEach(([t, auto], n) => {
+      const l = document.createElement("label"), c = document.createElement("input"), s = document.createElement("span");
+      c.type = "checkbox"; c.dataset.k = String(n); c.id = "h" + n; c.checked = n in prev && !auto ? prev[n] : auto;
+      s.textContent = t; l.append(c, s); box.appendChild(l);
+    });
+  }
+
+  $("f").addEventListener("input", ev => {
+    if (ev.target.closest(".program")) countsTouched = true;
+    if (ev.target.name === "mix" || ev.target.id === "heads" || ev.target.id === "sqft") {
+      if (ev.target.name === "mix") countsTouched = false;
+    }
+    render();
+  });
+  $("f").addEventListener("submit", ev => ev.preventDefault());
+  $("copy").addEventListener("click", async () => {
+    const text = $("summary").textContent;
+    try { await navigator.clipboard.writeText(text); $("toast").textContent = "Summary copied."; }
+    catch { const r = document.createRange(); r.selectNodeContents($("summary")); const s = getSelection(); s.removeAllRanges(); s.addRange(r); $("toast").textContent = "Selected. Press Cmd+C or Ctrl+C to copy."; }
+    setTimeout(() => $("toast").textContent = "", 3000);
+  });
+  render();
+})();
+</script>
