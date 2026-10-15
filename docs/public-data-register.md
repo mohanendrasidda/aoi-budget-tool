@@ -67,6 +67,11 @@ the reason.
 | **KI** | Price lists | HTTP 403 to scripts | NE DAS KI bid sheet; a person checks in a browser |
 | **citizenportal.ai** | Council vote summaries: La Porte TX, Dothan AL, Republic MO, Harrisville UT, Story County IA | Cloudflare 403 | Discovery only; find and cite each city's own record |
 | **University of Illinois** capital projects furniture/AV process PDF | FF&E rules | HTTP 403 | Manual |
+| **City of Lincoln / Lancaster County clerk** (app.lincoln.ne.gov, lancaster.ne.gov) | Council and county board furniture contracts | Cloudflare blocks scripts | A person searches the agenda archive in a browser |
+| **Riverside County** (rcgov.org) | Board furniture items | Cloudflare | Manual |
+| **Rice County MN** | Board furniture items | HTTP 403 | Manual |
+| **world-architects.com, architectmagazine.com** | Building areas for city halls | HTTP 403 | Use the city's or architect's own page |
+| **olathereporter.com** | Olathe KS furniture award | HTTP 429 (rate limit); not retried | Manual |
 
 ### 2d. Login required
 
@@ -91,6 +96,10 @@ the reason.
 | **Nebraska DOR** Oct 2026 rate card PDF | Redirects and an expired certificate | Re-check by hand; confirm how freight is taxed |
 | **geigerfurniture.com, millerknoll.com** robots.txt | Returned HTML 404s | Treat as unknown; manual only |
 | **cbs-ergonomics.com** | Did not respond | Retry by hand |
+| **BoardBook** direct PDF links (school board packets) | HTTP 400 to direct links | Open packets from the BoardBook meeting page by hand |
+| **Minnesota State** capital request PDFs (minnstate.edu) | 404 | Check the current capital budget page |
+| **NE DAS** Fallbrook consolidation director's note | PDF is a scanned image, no text layer | Read by hand |
+| **NE DAS** `/bids/` path | Disallowed in das.nebraska.gov robots.txt | Browse by hand |
 
 ### 2f. No public pricing found
 

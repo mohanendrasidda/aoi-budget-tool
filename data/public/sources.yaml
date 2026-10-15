@@ -82,3 +82,11 @@ sources:
     name: City of Manassas Park staff report, City Hall furniture and IT purchase (2021-12-14)
     url: https://cms7files.revize.com/manassasparkva/Agenda%20Item%20-%20OCM_City%20Hall%20Furniture%20and%20IT%20Purchase.pdf
     method: read; unit prices entered by hand
+  - id: lawrence-ks
+    name: City of Lawrence KS city commission agenda summaries
+    url: https://assets.lawrenceks.org/agendas/cc/2019/01-08-19/pl_riverfront_furniture_cover_summary.html
+    method: read; values entered by hand
+  - id: iowa-regents
+    name: Board of Regents, State of Iowa, capital register (ISU, June 2023)
+    url: https://iowaregents.edu/media/cms/0623_PF_4__ISU_Register_93FCDB2FC837B.pdf
+    method: read; values entered by hand
