@@ -68,3 +68,14 @@ def test_public_book_loads_with_sourced_values():
     assert 0 < b.public_price_factor < 1
     assert b.adders_pct == 24
     assert "2025-12" in b.ppi
+
+
+def test_reuse_lowers_the_estimate_and_is_listed(book):
+    e = estimate(Inputs(area_sf=1000, finish="unknown", period="2025-12", reuse_pct=25), book)
+    assert (e.low, e.high) == (7_500, 15_000)
+    assert e.factors[-1].name == "Reused furniture"
+
+
+def test_reuse_must_be_below_100():
+    with pytest.raises(ValueError):
+        Inputs(area_sf=10, reuse_pct=100)

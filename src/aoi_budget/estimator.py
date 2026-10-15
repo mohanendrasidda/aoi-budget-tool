@@ -31,6 +31,7 @@ class Inputs:
     tier: str = DEFAULT_TIER
     include_adders: bool = False
     tax_scope: str | None = None  # a sales_tax_pct scope, or None for tax-exempt
+    reuse_pct: float = 0.0  # share of furniture cost avoided by reusing existing pieces
 
     def __post_init__(self) -> None:
         if not self.area_sf > 0:
@@ -41,6 +42,8 @@ class Inputs:
             raise ValueError(f"finish must be one of {sorted(FINISH_POSITION)}")
         if self.buyer not in BUYERS:
             raise ValueError(f"buyer must be one of {sorted(BUYERS)}")
+        if not 0 <= self.reuse_pct < 100:
+            raise ValueError("reuse_pct must be from 0 to under 100")
 
 
 @dataclass(frozen=True)
@@ -109,6 +112,15 @@ def factors_for(inputs: Inputs, book: Book) -> tuple[Factor, ...]:
                 book.rsf_to_usf,
                 s["area_basis"],
                 f"{inputs.area_basis} treated as rentable: 200 usable / 230 rentable",
+            )
+        )
+    if inputs.reuse_pct:
+        out.append(
+            Factor(
+                "Reused furniture",
+                1 - inputs.reuse_pct / 100,
+                "seller input",
+                f"{inputs.reuse_pct:g}% of furniture cost avoided (reused pieces assumed to match)",
             )
         )
     if inputs.include_adders:
