@@ -11,7 +11,7 @@ Pre-design budget-range tool for AOI furniture sellers. During the first client 
 | Mohanendra (Sidd) Siddha | `@mohanendrasidda` | Repo admin |
 | Mohammed Anas | `@mhdan7s` | |
 | Colby Jochum | `@WestHaddock` | |
-| Sam Sanketh | `@TODO` | |
+| Sam Sanketh | `@Eternites` | |
 | Harshi Vallabhaneni | `@TODO` | |
 
 Partner contacts (AOI Lincoln): Penny Johnston, Curtis Yount. Instructors: Chad Michel, Mark Stone.
