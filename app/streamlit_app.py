@@ -13,6 +13,7 @@ import aoi_budget
 from aoi_budget.book import DATA_DIR, load_book
 from aoi_budget.estimator import Inputs, estimate
 from aoi_budget.evaluate import evaluate, load_projects, summarize
+from aoi_budget.intake import llm_enabled, read_notes
 from aoi_budget.seller import (
     FINISH_LABEL,
     PEOPLE_PER_CONFERENCE,
@@ -37,12 +38,76 @@ MARKETS = {
 }
 AREA_BASES = {"Usable (USF)": "USF", "Rentable (RSF)": "RSF", "Gross (GSF)": "GSF"}
 FINISH_PLACEMENT = {"basic": "lower half", "standard": "middle half", "premium": "upper half"}
+METHODS = {
+    "Adjusted (v1)": "all sourced adjustments below",
+    "Published band only (v0)": "band x finish x price level; ignores buyer, area basis, reuse, "
+    "add-ons and tax",
+}
+# Widget defaults live in session state so "Apply to form" can change them (#16).
+DEFAULTS = {
+    "ptype": PROJECT_TYPES[0],
+    "reuse": 25,
+    "area": 12_000,
+    "basis": "Usable (USF)",
+    "heads": 0,
+    "mix": "Balanced",
+    "finish": "standard",
+    "buyer": "commercial",
+    "intake_v": 0,
+}
+for _k, _v in DEFAULTS.items():
+    st.session_state.setdefault(_k, _v)
+BASIS_LABEL = {v: k for k, v in AREA_BASES.items()}
+COUNT_FIELDS = ("private_offices", "conference_rooms", "huddle_rooms")
+FIELD_LABEL = {
+    "area_sf": "Square feet",
+    "area_basis": "Measured as",
+    "headcount": "Headcount",
+    "mix": "Space mix",
+    "private_offices": "Offices",
+    "conference_rooms": "Conference",
+    "huddle_rooms": "Huddle",
+    "finish": "Finish level",
+    "project_type": "Project type",
+    "reuse_pct": "Reused (%)",
+    "buyer": "Buyer",
+}
 
 
 @st.cache_data
 def _scores():
     scored = evaluate(load_projects(), load_book())
     return scored, summarize(scored)
+
+
+def _read_notes() -> None:
+    use_model = st.session_state.get("use_model", False)
+    st.session_state.proposal = read_notes(st.session_state.get("notes", ""), use_model)
+
+
+def _apply_proposal() -> None:
+    f = st.session_state.proposal.fields
+    ss = st.session_state
+    if "area_sf" in f:
+        ss.area = f["area_sf"]
+    if "area_basis" in f:
+        ss.basis = BASIS_LABEL[f["area_basis"]]
+    for field, key in (("headcount", "heads"), ("mix", "mix"), ("finish", "finish")):
+        if field in f:
+            ss[key] = f[field]
+    if "buyer" in f:
+        ss.buyer = f["buyer"]
+    if "project_type" in f:
+        ss.ptype = f["project_type"]
+    if "reuse_pct" in f:
+        ss.reuse = min(75, 5 * round(f["reuse_pct"] / 5))  # slider steps by 5
+        ss.ptype = "Refresh"
+    counts = {k: f[k] for k in COUNT_FIELDS if k in f}
+    if counts:
+        heads = ss.heads or default_headcount(ss.area, book.usf_per_person)
+        ss.program_override = {"for": (heads, ss.mix), **counts}
+    ss.intake_v += 1
+    ss.proposal = None
 
 
 def _csv(name: str) -> pd.DataFrame:
@@ -70,23 +135,33 @@ with tab_est:
         ptype = st.radio("Project type", PROJECT_TYPES, horizontal=True, key="ptype")
         reuse = 0
         if ptype == "Refresh":
-            reuse = st.slider("Share of furniture reused (%)", 0, 75, 25, step=5, key="reuse")
+            reuse = st.slider("Share of furniture reused (%)", 0, 75, step=5, key="reuse")
 
         st.subheader("2 · The space")
         c1, c2 = st.columns(2)
         area = c1.number_input(
-            "Square feet", min_value=500, max_value=500_000, value=12_000, step=500, key="area"
+            "Square feet", min_value=500, max_value=500_000, step=500, key="area"
         )
         basis = c2.selectbox("Measured as", list(AREA_BASES), key="basis")
         heads_in = c1.number_input(
-            "Headcount (0 = estimate)", min_value=0, max_value=5_000, value=0, key="heads"
+            "Headcount (0 = estimate)", min_value=0, max_value=5_000, key="heads"
         )
         heads = int(heads_in) or default_headcount(area, book.usf_per_person)
-        mix = c2.radio("Space mix", list(PRIVATE_SHARE), index=1, key="mix")
+        mix = c2.radio("Space mix", list(PRIVATE_SHARE), key="mix")
         suggested = space_program(heads, mix)
+        override = st.session_state.get("program_override") or {}
+        if override.get("for") == (heads, mix):  # counts from the notes, until headcount/mix change
+            offices = override.get("private_offices", suggested.private_offices)
+            suggested = Program(
+                workstations=max(0, heads - offices),
+                private_offices=offices,
+                conference_rooms=override.get("conference_rooms", suggested.conference_rooms),
+                huddle_rooms=override.get("huddle_rooms", suggested.huddle_rooms),
+            )
         st.caption("Space program (edit any count)")
         p = st.columns(4)
-        k = f"{heads}-{mix}"  # fresh suggestion whenever headcount or mix changes
+        # Fresh suggestion whenever headcount, mix or applied notes change.
+        k = f"{heads}-{mix}-{st.session_state.intake_v}"
         program = Program(
             workstations=p[0].number_input(
                 "Workstations", 0, 5_000, suggested.workstations, key=f"ws-{k}"
@@ -104,7 +179,6 @@ with tab_est:
         finish = st.radio(
             "Finish level",
             list(FINISH_LABEL),
-            index=1,
             format_func=FINISH_LABEL.get,
             horizontal=True,
             key="finish",
@@ -114,6 +188,8 @@ with tab_est:
         year = c4.selectbox("Purchase year", ["2026", "2027", "2028"], key="year")
         tax = c3.selectbox("Sales tax", ["exempt", *book.tax_pct], index=2, key="tax")
         adders = c4.checkbox("Include freight, install, handling", key="adders")
+        method = st.radio("Method", list(METHODS), horizontal=True, key="method")
+        st.caption(METHODS[method])
 
         st.subheader("Conversation notes")
         notes = st.text_area(
@@ -122,18 +198,48 @@ with tab_est:
             max_chars=2_000,
             key="notes",
         )
+        if llm_enabled():
+            st.toggle(
+                "Read with AI model (sends these notes to the model provider)", key="use_model"
+            )
+        st.button("Read notes into the form", on_click=_read_notes, disabled=not notes.strip())
+        proposal = st.session_state.get("proposal")
+        if proposal:
+            if proposal.error:
+                st.warning(f"Could not read the notes: {proposal.error}. Nothing was changed.")
+            elif proposal.fields:
+                st.caption(f"Found in the notes ({proposal.source}). Check before applying:")
+                st.dataframe(
+                    pd.DataFrame(
+                        [
+                            {"Field": FIELD_LABEL[k], "Value": str(v)}
+                            for k, v in proposal.fields.items()
+                        ]
+                    ),
+                    hide_index=True,
+                    width="stretch",
+                )
+                st.button("Apply to form", on_click=_apply_proposal, type="primary")
+            else:
+                st.caption("No form fields found in the notes.")
+            if proposal.dropped:
+                st.caption("Ignored:")
+                st.text("\n".join(proposal.dropped))
 
-    inputs = Inputs(
-        area_sf=float(area),
-        area_basis=AREA_BASES[basis],
-        finish=finish,
-        buyer=buyer,
-        tier=MARKETS[market],
-        period=year,
-        include_adders=adders,
-        tax_scope=None if tax == "exempt" else tax,
-        reuse_pct=float(reuse),
-    )
+    if method.endswith("(v0)"):
+        inputs = Inputs(area_sf=float(area), finish=finish, tier=MARKETS[market], period=year)
+    else:
+        inputs = Inputs(
+            area_sf=float(area),
+            area_basis=AREA_BASES[basis],
+            finish=finish,
+            buyer=buyer,
+            tier=MARKETS[market],
+            period=year,
+            include_adders=adders,
+            tax_scope=None if tax == "exempt" else tax,
+            reuse_pct=float(reuse),
+        )
     est = estimate(inputs, book)
 
     with right:
@@ -143,7 +249,8 @@ with tab_est:
         m2.metric("Per sq ft", f"\\${est.psf_low:,.2f} – \\${est.psf_high:,.2f}")
         st.caption(
             f"{area:,} sq ft · about {heads} people · {FINISH_LABEL[finish]} finish"
-            + (f" · {reuse}% reused" if reuse else "")
+            + (f" · {reuse}% reused" if reuse and inputs.reuse_pct else "")
+            + f" · {method}"
         )
 
         _, summary = _scores()
@@ -177,7 +284,11 @@ with tab_est:
             st.markdown(f"- {q}")
 
         st.markdown("**Client-ready summary** (copy button at top right)")
-        st.code(client_summary(label, est, heads, finish, reuse), language=None, wrap_lines=True)
+        st.code(
+            client_summary(label, est, heads, finish, inputs.reuse_pct),
+            language=None,
+            wrap_lines=True,
+        )
 
         with st.expander("Assumptions and sources"):
             band_lo, band_hi = book.bands[MARKETS[market]]
@@ -247,10 +358,10 @@ with tab_sens:
                 {
                     "Assumption": s.name,
                     "Low": s.low_label,
-                    "Low total": round(s.low_total),
+                    "Low total": f"${s.low_total:,.0f}",
                     "High": s.high_label,
-                    "High total": round(s.high_total),
-                    "Spread": round(s.spread),
+                    "High total": f"${s.high_total:,.0f}",
+                    "Spread": f"${s.spread:,.0f}",
                 }
                 for s in swings
             ]
