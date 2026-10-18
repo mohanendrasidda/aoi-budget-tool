@@ -80,6 +80,14 @@ def _scores():
     return scored, summarize(scored)
 
 
+def _shown(field: str, value) -> str:
+    if field == "area_basis":
+        return BASIS_LABEL[value]
+    if field == "finish":
+        return FINISH_LABEL[value]
+    return f"{value:,}" if isinstance(value, int) else str(value)
+
+
 def _read_notes() -> None:
     use_model = st.session_state.get("use_model", False)
     st.session_state.proposal = read_notes(st.session_state.get("notes", ""), use_model)
@@ -212,7 +220,7 @@ with tab_est:
                 st.dataframe(
                     pd.DataFrame(
                         [
-                            {"Field": FIELD_LABEL[k], "Value": str(v)}
+                            {"Field": FIELD_LABEL[k], "Value": _shown(k, v)}
                             for k, v in proposal.fields.items()
                         ]
                     ),
