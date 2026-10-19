@@ -17,7 +17,7 @@ from statistics import median
 from aoi_budget.book import DATA_DIR, Book, load_book
 from aoi_budget.estimator import Inputs, estimate
 
-VARIANTS = ("published", "adjusted", "calibrated")
+VARIANTS = ("published", "adjusted", "calibrated", "bottom_up")
 
 
 @dataclass(frozen=True)
