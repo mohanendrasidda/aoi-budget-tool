@@ -56,6 +56,7 @@ the reason.
 | **GSA eLibrary** (Steelcase, Haworth, HNI/Allsteel, Kimball, Teknion, Global, OFS, KI GSA price lists) | Federal price lists and discounts, SIN 33721 | `/ElibMain/` disallowed. The `gsaadvantage.gov/ref_text/` PDFs are allowed but none were opened | Browse eLibrary by hand, then fetch the ref_text PDF |
 | **KI** (ki.com) | Price lists | Disallows `/*.aspx$` and the document library; also blocks scripts (2c) | NE DAS 6904 OF KI bid sheet (public) |
 | **nebraska.edu** `/archive/` | Older Regents agendas | Disallowed on the main host | Use the `docs.nebraska.edu` copies (allowed) |
+| **NASPO ValuePoint** master agreement PDFs (`s3.us-east-1.amazonaws.com/nvp/`) | MillerKnoll MA3967 Amendment 2: discount off list by product line x 3 order-size tiers (used, UNVERIFIED, by the bottom-up price layer) | robots.txt on the S3 host disallows the path | A person opens it from naspovaluepoint.org in a browser and checks the category table |
 
 ### 2c. Bot protection (scripts blocked)
 
