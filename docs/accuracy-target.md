@@ -66,3 +66,28 @@ projects:
   competing bids on the same public specification (being measured from public bid tabulations).
 
 Below that, an improvement that cannot be shown on new projects is not an improvement.
+
+## Amendments
+
+### 2026-10-19: noise floor measured
+
+The bid-tab noise floor named in section 5 is now measured from public tabulations
+(`data/public/bid_tabs.csv`, source-verified rows only; `aoi_budget.calibration.noise_floor`):
+
+| Measure | Value |
+|---|---|
+| Tabulations / compliant bids | 19 / 73 (2016-2026; 13 Midwest in the full set) |
+| Each bid vs the median of the other bids on the same spec (median absolute deviation) | **9.2%** |
+| Winning (low) bid vs the tab median | **-7.8%** |
+
+So, for section 5:
+
+- **Noise floor = about 10%.** A median error near 10% on 10+ projects is as good as the market
+  allows; stop refining the model there.
+- Bids are right-skewed, which supports the asymmetric range in section 2.
+- Awarded (low-bid) totals sit about 8% below a typical bid. Public award totals in the test set
+  therefore read low against an estimate of the typical price; this is noted, not corrected for.
+
+Caveats: only 7 tabs are classic office workstation bids; spread grows as specs allow
+substitutes (single brand about 5%, "or equal" about 10-15%, catalog items much more); tabs give
+spread, not $/sf (none state area). Cooperative-contract purchases produce no bid tab.

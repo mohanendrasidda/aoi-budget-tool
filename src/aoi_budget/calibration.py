@@ -140,3 +140,31 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
+
+
+def noise_floor(path=None) -> dict[str, float]:
+    """Market spread on identical specs: each compliant bid vs the median of the OTHER bids on
+    the same public tabulation (data/public/bid_tabs.csv). No estimator can beat this on
+    average, so it is the stop line in docs/accuracy-target.md."""
+    import csv
+
+    from aoi_budget.book import DATA_DIR
+
+    path = path or DATA_DIR / "bid_tabs.csv"
+    tabs: dict[str, list[float]] = {}
+    with open(path, newline="", encoding="utf-8") as f:
+        for r in csv.DictReader(f):
+            if r["compliant"] == "1":
+                tabs.setdefault(r["tab_id"], []).append(float(r["total_usd"]))
+    tabs = {k: v for k, v in tabs.items() if len(v) >= 2}
+    loo, low = [], []
+    for bids in tabs.values():
+        low.append(min(bids) / median(bids) - 1)
+        for i, b in enumerate(bids):
+            loo.append(abs(b / median(bids[:i] + bids[i + 1 :]) - 1))
+    return {
+        "tabs": len(tabs),
+        "bids": sum(len(v) for v in tabs.values()),
+        "loo_median_abs_dev_pct": 100 * median(loo),
+        "low_bid_vs_median_pct": 100 * median(low),
+    }

@@ -48,3 +48,25 @@ def test_calibrate_reports_under_quoting_separately():
     (c,) = calibrate(rows)
     assert c.coverage_pct == pytest.approx(100 / 3)
     assert c.under_pct == pytest.approx(100 / 3)
+
+
+def test_noise_floor_compares_each_bid_with_the_others(tmp_path):
+    from aoi_budget.calibration import noise_floor
+
+    p = tmp_path / "tabs.csv"
+    p.write_text(
+        "tab_id,total_usd,compliant\nA,100,1\nA,110,1\nA,90,1\nA,500,0\nB,50,1\n", encoding="utf-8"
+    )
+    nf = noise_floor(p)
+    assert nf["tabs"] == 1 and nf["bids"] == 3  # non-compliant and single-bid tabs excluded
+    # 100 vs median(110, 90)=100 -> 0; 110 vs 95 -> 15.8%; 90 vs 105 -> 14.3%: median 14.3%
+    assert nf["loo_median_abs_dev_pct"] == pytest.approx(100 * 15 / 105)
+    assert nf["low_bid_vs_median_pct"] == pytest.approx(-10)
+
+
+def test_public_noise_floor_is_about_ten_percent():
+    from aoi_budget.calibration import noise_floor
+
+    nf = noise_floor()
+    assert nf["tabs"] >= 10
+    assert 5 < nf["loo_median_abs_dev_pct"] < 20
