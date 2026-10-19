@@ -7,7 +7,9 @@ from pathlib import Path
 import pytest
 
 PUBLIC = Path(__file__).resolve().parents[1] / "data" / "public"
-FILES = sorted(PUBLIC.glob("*.csv"))
+# Model outputs, not sourced facts; frozen by hash (docs/accuracy-target.md, rule 3).
+OUTPUTS = {"preregistered_estimates.csv"}
+FILES = sorted(p for p in PUBLIC.glob("*.csv") if p.name not in OUTPUTS)
 
 
 def _rows(path):
