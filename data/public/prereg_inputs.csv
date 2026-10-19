@@ -1,0 +1,16 @@
+id,name,area_sf,area_basis,segment,buyer,headcount,workstations,private_offices,conference_rooms,basis_reason,source_url
+fnbo-tower,FNBO Tower Transformation (Omaha),500000,RSF,office,commercial,1500,1500,,,26 of 44 floors in a tower; 1500+ workstations,https://aoicorp.com/portfolio/
+methodist-corp,Methodist Health System corporate office,160000,RSF,office,commercial,800,,,,3 floors; 800+ staff,https://aoicorp.com/portfolio/methodist-health-system-corporate-office/
+centris-hq,Centris FCU headquarters,115000,building_sf,office,commercial,150,150,,24,whole HQ building; 150 workstations; 24 conference rooms,https://aoicorp.com/portfolio/centris-federal-credit-union-headquarters/
+sac-fcu-hq,SAC Federal Credit Union HQ,94000,building_sf,office,commercial,220,,,,whole HQ building; 220 employees,https://aoicorp.com/portfolio/sac-federal-credit-union/
+kiewit-hq,Kiewit HQ,180000,building_sf,office,commercial,650,,,,whole HQ building (7 floors); 650 employees,https://aoicorp.com/portfolio/
+triage-offices,Triage Staffing offices,80000,RSF,office,commercial,,,,,offices; count not stated,https://aoicorp.com/portfolio/triage-staffing-offices/
+lindsay-hq,Lindsay Corp HQ,55000,building_sf,office,commercial,,,,,whole HQ building,https://aoicorp.com/portfolio/lindsay-corporation-headquarters/
+conagra-2nd,Conagra HQ 2nd floor renovation,46000,RSF,office,commercial,,,,,one floor,https://aoicorp.com/portfolio/conagra-headquarters-2nd-floor-renovation/
+pillen-hq,Pillen Family Farms HQ,34000,building_sf,office,commercial,80,70,10,,whole HQ building; 70 workstations + 10 private offices,https://aoicorp.com/portfolio/pillen-family-farms-headquarters/
+q2-holdings,Q2 Holdings office,20000,RSF,office,commercial,100,,,,office suite; about 100 employees,https://aoicorp.com/portfolio/
+runza-corp,Runza corporate office,15000,RSF,office,commercial,,,,,office,https://aoicorp.com/portfolio/runza-corporate-office/
+hugo-ent,HUGO Enterprises corporate office,13000,RSF,office,commercial,,,,,two phases,https://aoicorp.com/portfolio/hugo-enterprises-llc-corporate-office/
+apple-roofing,Apple Roofing (Lincoln),12200,RSF,office,commercial,,,,,office,https://aoicorp.com/portfolio/apple-roofing/
+werner-logistics,Werner Logistics,7000,RSF,office,commercial,,,,,office,https://aoicorp.com/portfolio/werner-logistics/
+southern-hosp,Southern Hospitality Ventures (Lincoln),5250,RSF,office,commercial,,,,,office with bench workstations,https://aoicorp.com/portfolio/southern-hospitality-ventures/
