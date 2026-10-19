@@ -7,6 +7,12 @@ Roles decide what a project can prove:
 - floor: contract that reused furniture. The estimate should sit above it.
 - envelope: program-statement budget. The estimate should sit at or below it.
 - per_seat: itemized seats, no building area. Area is seats x usable sf per person.
+A total marked certainty=upper_bound (e.g. a seat count that is only a minimum) is scored as an
+envelope, whatever its evidence.
+
+Variants: published (band only), adjusted (+ sourced factors), calibrated (adjusted, scaled
+leave-one-out), informed (adjusted + the finish level recorded for the project; rule declared
+in docs/error-analysis.md: competitive public procurement is scored at the basic finish).
 """
 
 import csv
@@ -17,7 +23,7 @@ from statistics import median
 from aoi_budget.book import DATA_DIR, Book, load_book
 from aoi_budget.estimator import Inputs, estimate
 
-VARIANTS = ("published", "adjusted", "calibrated", "bottom_up")
+VARIANTS = ("published", "adjusted", "informed", "calibrated", "bottom_up")
 
 
 @dataclass(frozen=True)
@@ -33,15 +39,20 @@ class Project:
     area_basis: str
     seats: int | None
     actual_usd: float
+    procurement: str = ""
+    finish: str = "unknown"
+    certainty: str = ""
 
     @property
     def role(self) -> str:
         if self.evidence == "budget":
             return "envelope"
+        if self.scope == "reuse_heavy":
+            return "floor"  # reuse makes the total a minimum, even if it is also capped
+        if self.certainty == "upper_bound":
+            return "envelope"
         if self.area_sf is None:
             return "per_seat"
-        if self.scope == "reuse_heavy":
-            return "floor"
         return "headline"
 
 
@@ -93,6 +104,9 @@ def load_projects(data_dir: Path = DATA_DIR) -> list[Project]:
             area_basis=r["area_basis"] or "USF",
             seats=int(r["seats"]) if r["seats"] else None,
             actual_usd=float(r["actual_usd"]),
+            procurement=r.get("procurement", ""),
+            finish=r.get("finish") or "unknown",
+            certainty=r.get("certainty", ""),
         )
         for r in rows
     ]
@@ -102,8 +116,9 @@ def _inputs(p: Project, book: Book, variant: str) -> Inputs:
     area = p.area_sf if p.area_sf is not None else p.seats * book.usf_per_person
     if variant == "published":
         return Inputs(area_sf=area, finish="unknown", period=p.year)
+    finish = p.finish if variant == "informed" else "unknown"
     return Inputs(
-        area_sf=area, area_basis=p.area_basis, finish="unknown", buyer=p.buyer, period=p.year
+        area_sf=area, area_basis=p.area_basis, finish=finish, buyer=p.buyer, period=p.year
     )
 
 
@@ -132,6 +147,7 @@ def evaluate(projects: list[Project], book: Book) -> list[Scored]:
     for p in projects:
         out.append(_score(p, book, "published"))
         out.append(adjusted[p.id])
+        out.append(_score(p, book, "informed"))
         others = [adjusted[h.id] for h in headline if h.id != p.id]
         scale = median(s.actual_psf / s.mid_psf for s in others) if others else 1.0
         out.append(_score(p, book, "calibrated", scale))

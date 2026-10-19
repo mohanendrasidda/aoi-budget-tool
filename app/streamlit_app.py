@@ -262,12 +262,12 @@ with tab_est:
         )
 
         _, summary = _scores()
-        adj = next((s for s in summary if s.variant == "adjusted"), None)
-        if adj:
+        inf = next((s for s in summary if s.variant == "informed"), None)
+        if inf:
             st.info(
-                f"Checked against {adj.n} public furniture awards: the adjusted model's median "
-                f"error is {adj.median_abs_error_pct:.0f}%. Few data points, so treat the range "
-                "as a starting point. See *How accurate*."
+                f"Checked against {inf.n} public furniture awards, with each project's finish "
+                f"level set: median error {inf.median_abs_error_pct:.0f}%. Few data points, so "
+                "treat the range as a starting point. See *How accurate*."
             )
 
         st.markdown("**Published bands vs this estimate (\\$/sf, before adjustments)**")
@@ -403,8 +403,8 @@ with tab_acc:
     )
     variant = st.radio(
         "Show variant",
-        ["published", "adjusted", "calibrated"],
-        index=1,
+        ["published", "adjusted", "informed", "calibrated"],
+        index=2,
         horizontal=True,
         key="variant",
     )

@@ -65,3 +65,22 @@ def test_public_projects_load_and_report_runs():
     from aoi_budget.book import load_book
 
     assert "Headline accuracy" in report(evaluate(projects, load_book()))
+
+
+def test_upper_bound_totals_are_envelopes_but_reuse_stays_a_floor():
+    assert _project("a", 1, certainty="upper_bound").role == "envelope"
+    assert _project("a", 1, area_sf=None, seats=40, certainty="upper_bound").role == "envelope"
+    assert _project("a", 1, scope="reuse_heavy", certainty="upper_bound").role == "floor"
+
+
+def test_informed_variant_uses_the_recorded_finish(book):
+    p = _project("a", 15_000, finish="basic")  # synthetic band 10-20 $/sf, 1,000 sf
+    scored = {s.variant: s for s in evaluate([p], book) if s.project.id == "a"}
+    assert (scored["adjusted"].low_psf, scored["adjusted"].high_psf) == pytest.approx((10, 20))
+    assert (scored["informed"].low_psf, scored["informed"].high_psf) == pytest.approx((10, 15))
+
+
+def test_public_projects_record_how_they_were_bought():
+    for p in load_projects():
+        assert p.procurement and p.certainty
+        assert p.finish in {"unknown", "basic", "standard", "premium"}
