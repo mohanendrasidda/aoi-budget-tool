@@ -12,8 +12,15 @@ direction, not a measured accuracy.
 | Variant | Headline n | Coverage | Median abs error | Median band width |
 |---|---|---|---|---|
 | published (band only) | 4 | 0% | 86% | 40% |
-| adjusted (+ sourced factors) | 4 | 75% | 20% | 40% |
-| **informed (+ recorded finish)** | 4 | 75% | **14%** | **31%** |
+| adjusted (+ sourced factors) | 4 | 75% | 15% | 40% |
+| informed (+ recorded finish) | 4 | 50% | 17% | 31% |
+
+Gross and building-sf areas now convert to usable with a **sourced building-efficiency factor by
+segment** (office 0.78, academic 0.63; UNM guidelines averaging SCUP data), declared before
+scoring. Before it, informed was 75% / 14% and adjusted 75% / 20%. Effect: the office project
+(Palmyra) went from +15% to +3% and now passes; academic buildings now run low (-16% to -32%)
+because net assignable area excludes circulation that "usable" includes. The tool's users quote
+offices, where the factor helps; the academic factor is labeled conservative.
 
 Headline projects: UNL Mabel Lee (+12%), Palmyra admin (+15%, just outside), Chadron State Math
 Science (+16%; a project the partner furnished, per its public case study), Wayne State Center
@@ -41,8 +48,8 @@ reports, which give net and gross square footage and a furnishings line.
 
 ## Still open
 
-- **Gross-to-usable factor** from an independent source (campus space standards, BOMA), applied
-  to GSF / building sf inputs. Biggest single lever found so far.
+- **Academic gross-to-usable**: find a usable (not net assignable) efficiency for campus
+  buildings; the current 0.63 undercounts.
 
 - **Per-seat orders** (Manassas Park) need per-workstation pricing, not area. Planned as part of
   the bottom-up estimator (#14).

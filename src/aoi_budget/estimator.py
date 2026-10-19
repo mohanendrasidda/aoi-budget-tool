@@ -17,7 +17,8 @@ FINISH_POSITION = {
     "premium": (0.5, 1.0),
 }
 USABLE_BASES = {"USF", "NSF"}
-AREA_BASES = USABLE_BASES | {"RSF", "GSF", "building_sf"}
+GROSS_BASES = {"GSF", "building_sf"}
+AREA_BASES = USABLE_BASES | GROSS_BASES | {"RSF"}
 BUYERS = {"commercial", "public"}
 
 
@@ -32,6 +33,7 @@ class Inputs:
     include_adders: bool = False
     tax_scope: str | None = None  # a sales_tax_pct scope, or None for tax-exempt
     reuse_pct: float = 0.0  # share of furniture cost avoided by reusing existing pieces
+    segment: str = "office"  # building type, for converting gross area to usable
 
     def __post_init__(self) -> None:
         if not self.area_sf > 0:
@@ -105,7 +107,18 @@ def factors_for(inputs: Inputs, book: Book) -> tuple[Factor, ...]:
                 "government vs commercial discount, same manufacturer",
             )
         )
-    if inputs.area_basis not in USABLE_BASES:
+    gross = book.gsf_to_usf.get(inputs.segment)
+    if inputs.area_basis in GROSS_BASES and gross:
+        out.append(
+            Factor(
+                "Area basis",
+                gross,
+                s["gross_basis"],
+                f"{inputs.area_basis} to usable: {gross:.0%} efficiency for {inputs.segment} "
+                "buildings",
+            )
+        )
+    elif inputs.area_basis not in USABLE_BASES:
         out.append(
             Factor(
                 "Area basis",

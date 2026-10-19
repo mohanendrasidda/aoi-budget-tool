@@ -118,7 +118,12 @@ def _inputs(p: Project, book: Book, variant: str) -> Inputs:
         return Inputs(area_sf=area, finish="unknown", period=p.year)
     finish = p.finish if variant == "informed" else "unknown"
     return Inputs(
-        area_sf=area, area_basis=p.area_basis, finish=finish, buyer=p.buyer, period=p.year
+        area_sf=area,
+        area_basis=p.area_basis,
+        finish=finish,
+        buyer=p.buyer,
+        period=p.year,
+        segment=p.segment,
     )
 
 

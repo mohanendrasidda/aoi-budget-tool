@@ -26,6 +26,7 @@ def book() -> Book:
                 "adders",
                 "tax",
                 "usf_per_person",
+                "gross_basis",
             )
         },
     )

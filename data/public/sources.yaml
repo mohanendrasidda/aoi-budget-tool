@@ -94,3 +94,7 @@ sources:
     name: Nebraska State College System, Capital Construction Quarterly Reports (board agenda items)
     url: https://www.nscs.edu/_resources/e30d:s03rkd-27u/files/77095894z5056ceb1/_fn/5.8%20Capital%20Construction%20Quarterly%20Reports.pdf
     method: downloaded with aoi_budget.collect.fetch (robots.txt checked); pdftotext; values entered by hand
+  - id: unm-scup-efficiency
+    name: University of New Mexico, Building Efficiency Ratio Guidelines (rev. 2007; averages SCUP project data)
+    url: https://pdc.unm.edu/assets/documents/Building%20Efficiency%20Ratio%20Guidelines.pdf
+    method: downloaded with aoi_budget.collect.fetch (robots.txt checked); pdftotext; values entered by hand

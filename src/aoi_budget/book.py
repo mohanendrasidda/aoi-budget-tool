@@ -5,7 +5,7 @@ reviewer can trace any multiplier back to a URL in benchmarks.csv or ppi_office_
 """
 
 import csv
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from statistics import mean
 
@@ -33,6 +33,7 @@ class Book:
     tax_pct: dict[str, float]  # scope -> percent
     usf_per_person: float
     sources: dict[str, str]  # assumption name -> source_id
+    gsf_to_usf: dict[str, float] = field(default_factory=dict)  # segment -> usable/gross
 
 
 def _read(name: str, data_dir: Path) -> list[dict[str, str]]:
@@ -71,6 +72,7 @@ def load_book(data_dir: Path = DATA_DIR) -> Book:
 
     adders = [r for r in rows if r["metric"] == "adder_pct"]
     tax = {r["scope"]: float(r["value"]) for r in rows if r["metric"] == "sales_tax_pct"}
+    gross = {r["scope"]: float(r["value"]) for r in rows if r["metric"] == "gross_to_usable_ratio"}
     ppi = {r["period"]: float(r["index"]) for r in _read("ppi_office_furniture.csv", data_dir)}
 
     return Book(
@@ -90,5 +92,7 @@ def load_book(data_dir: Path = DATA_DIR) -> Book:
             "adders": "af-furniture-cost-guide",
             "tax": "ne-dor-tax",
             "usf_per_person": "gsa-workspace-2012",
+            "gross_basis": "unm-scup-efficiency",
         },
+        gsf_to_usf=gross,
     )

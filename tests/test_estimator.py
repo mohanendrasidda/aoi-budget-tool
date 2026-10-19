@@ -79,3 +79,14 @@ def test_reuse_lowers_the_estimate_and_is_listed(book):
 def test_reuse_must_be_below_100():
     with pytest.raises(ValueError):
         Inputs(area_sf=10, reuse_pct=100)
+
+
+def test_gross_area_uses_the_segment_efficiency_when_sourced(book):
+    from dataclasses import replace
+
+    b = replace(book, gsf_to_usf={"office": 0.5})
+    office = estimate(Inputs(area_sf=1_000, area_basis="GSF", period="2025-12"), b)
+    assert office.factors[-1].multiplier == 0.5
+    assert office.factors[-1].source_id == "synthetic"
+    other = estimate(Inputs(area_sf=1_000, area_basis="GSF", segment="housing"), b)
+    assert [f.multiplier for f in other.factors if f.name == "Area basis"] == [0.8]  # rentable
