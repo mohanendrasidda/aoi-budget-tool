@@ -1,6 +1,6 @@
 import zipfile
 
-from aoi_budget.redact import load_terms, redact, xlsx_text
+from aoi_budget.redact import load_terms, redact, suggest_terms, xlsx_text
 
 
 def test_names_emails_and_phones_are_removed(tmp_path):
@@ -34,3 +34,19 @@ def test_xlsx_text_reads_shared_and_inline_strings(tmp_path):
     text = xlsx_text(path)
     assert "A1=Workstation\tB1=42\tC1=Acme" in text
     assert "[REDACTED]" in redact(text, ["Acme"])[0]
+
+
+def test_suggest_terms_finds_names_and_keeps_common_and_product_words():
+    common = {"the", "chair", "call", "about", "met", "new", "office", "aeron"}
+    text = (
+        "Zorblat Quenby  00:01\nWe met about the new office.\n"
+        "Call Brindlewood Holdings Inc about the Aeron chair. The office is new."
+    )
+    found = suggest_terms(text, common)
+    assert {"Zorblat", "Quenby", "Zorblat Quenby", "Brindlewood"} <= found
+    assert "Brindlewood Holdings Inc" in found
+    assert not {"The", "Call", "Aeron", "We"} & found
+
+
+def test_word_written_in_lowercase_elsewhere_is_not_a_name():
+    assert "Delivery" not in suggest_terms("Delivery is late. The delivery truck.", set())
