@@ -90,3 +90,7 @@ sources:
     name: Board of Regents, State of Iowa, capital register (ISU, June 2023)
     url: https://iowaregents.edu/media/cms/0623_PF_4__ISU_Register_93FCDB2FC837B.pdf
     method: read; values entered by hand
+  - id: nscs-capital
+    name: Nebraska State College System, Capital Construction Quarterly Reports (board agenda items)
+    url: https://www.nscs.edu/_resources/e30d:s03rkd-27u/files/77095894z5056ceb1/_fn/5.8%20Capital%20Construction%20Quarterly%20Reports.pdf
+    method: downloaded with aoi_budget.collect.fetch (robots.txt checked); pdftotext; values entered by hand
