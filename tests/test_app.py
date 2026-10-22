@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import streamlit as st
 from streamlit.testing.v1 import AppTest
 
 APP = Path(__file__).resolve().parents[1] / "app" / "streamlit_app.py"
@@ -87,3 +88,32 @@ def test_v0_method_ignores_adjustments():
     at.radio(key="method").set_value("Published band only (v0)").run()
     assert not at.exception
     assert at.metric[0].value != v1
+
+
+def test_walls_allowance_is_separate_from_the_furniture_budget():
+    at = _run()
+    before = at.metric[0].value
+    at.checkbox(key="walls").check()
+    at.run()
+    assert not at.exception
+    assert at.metric[0].value == before  # ADR 0005: walls never change the furniture range
+    assert any("separate line" in w.value for w in at.warning)
+
+
+def test_second_opinion_and_accuracy_render_with_or_without_partner_prices():
+    at = _run()
+    assert not at.exception
+    assert any("Second opinion" in e.label for e in at.expander)
+    assert any(m.label == "Noise floor" for m in at.metric)
+
+
+def test_without_partner_prices_the_app_says_not_loaded(monkeypatch):
+    import aoi_budget.price_layer as pl
+
+    monkeypatch.setattr(pl, "load_price_layer", lambda *a, **k: None)
+    st.cache_resource.clear()  # earlier tests may have cached the real layer
+    st.cache_data.clear()
+    at = _run()
+    assert not at.exception
+    assert any("Not loaded on this computer" in c.value for c in at.caption)
+    assert not any(m.label == "Item-by-item range" for m in at.metric)

@@ -11,9 +11,13 @@ import streamlit as st
 
 import aoi_budget
 from aoi_budget.book import DATA_DIR, load_book
+from aoi_budget.calibration import noise_floor
+from aoi_budget.calibration import run as calibration_run
 from aoi_budget.estimator import Inputs, estimate
 from aoi_budget.evaluate import evaluate, load_projects, summarize
 from aoi_budget.intake import llm_enabled, read_notes
+from aoi_budget.price_layer import bottom_up, load_price_layer
+from aoi_budget.price_layer import score as score_bottom_up
 from aoi_budget.seller import (
     FINISH_LABEL,
     PEOPLE_PER_CONFERENCE,
@@ -54,9 +58,13 @@ DEFAULTS = {
     "finish": "standard",
     "buyer": "commercial",
     "intake_v": 0,
+    "walls": False,
 }
 for _k, _v in DEFAULTS.items():
     st.session_state.setdefault(_k, _v)
+# ADR 0005: prefab interior walls (DIRTT) are quoted separately, never inside the furniture
+# range. Public placeholder from DIRTT-published case studies, $ per sf of floor (wide on purpose).
+WALLS_PSF = (19, 67)
 BASIS_LABEL = {v: k for k, v in AREA_BASES.items()}
 COUNT_FIELDS = ("private_offices", "conference_rooms", "huddle_rooms")
 FIELD_LABEL = {
@@ -74,10 +82,24 @@ FIELD_LABEL = {
 }
 
 
+@st.cache_resource
+def _price_layer():
+    """Partner price layer: present only on the approved laptop (ADR 0004), else None."""
+    return load_price_layer()
+
+
 @st.cache_data
 def _scores():
-    scored = evaluate(load_projects(), load_book())
+    b = load_book()
+    scored = evaluate(load_projects(), b)
+    if _price_layer() is not None:
+        scored += score_bottom_up(_price_layer(), b)
     return scored, summarize(scored)
+
+
+@st.cache_data
+def _calibration():
+    return calibration_run(), noise_floor()
 
 
 def _shown(field: str, value) -> str:
@@ -126,7 +148,8 @@ def _csv(name: str) -> pd.DataFrame:
 st.title("AOI Budget Tool")
 st.caption(
     f"v{aoi_budget.__version__} · Public-data estimate: every number comes from a published "
-    "source or a labeled assumption. Partner pricing replaces these once approved."
+    "source or a labeled assumption. Partner prices appear only on the approved laptop, in the "
+    "item-by-item second opinion."
 )
 
 tab_est, tab_sens, tab_acc, tab_src = st.tabs(
@@ -196,6 +219,7 @@ with tab_est:
         year = c4.selectbox("Purchase year", ["2026", "2027", "2028"], key="year")
         tax = c3.selectbox("Sales tax", ["exempt", *book.tax_pct], index=2, key="tax")
         adders = c4.checkbox("Include freight, install, handling", key="adders")
+        walls = st.checkbox("Show prefab walls (DIRTT) as a separate allowance", key="walls")
         method = st.radio("Method", list(METHODS), horizontal=True, key="method")
         st.caption(METHODS[method])
 
@@ -234,20 +258,21 @@ with tab_est:
                 st.caption("Ignored:")
                 st.text("\n".join(proposal.dropped))
 
+    adjusted_inputs = Inputs(
+        area_sf=float(area),
+        area_basis=AREA_BASES[basis],
+        finish=finish,
+        buyer=buyer,
+        tier=MARKETS[market],
+        period=year,
+        include_adders=adders,
+        tax_scope=None if tax == "exempt" else tax,
+        reuse_pct=float(reuse),
+    )
     if method.endswith("(v0)"):
         inputs = Inputs(area_sf=float(area), finish=finish, tier=MARKETS[market], period=year)
     else:
-        inputs = Inputs(
-            area_sf=float(area),
-            area_basis=AREA_BASES[basis],
-            finish=finish,
-            buyer=buyer,
-            tier=MARKETS[market],
-            period=year,
-            include_adders=adders,
-            tax_scope=None if tax == "exempt" else tax,
-            reuse_pct=float(reuse),
-        )
+        inputs = adjusted_inputs
     est = estimate(inputs, book)
 
     with right:
@@ -269,6 +294,42 @@ with tab_est:
                 f"level set: median error {inf.median_abs_error_pct:.0f}%. Few data points, so "
                 "treat the range as a starting point. See *How accurate*."
             )
+
+        if walls:
+            w_lo, w_hi = WALLS_PSF
+            st.warning(
+                f"**Prefab walls (DIRTT): separate line, not in the furniture budget.** "
+                f"Rough public allowance \\${area * w_lo:,.0f} – \\${area * w_hi:,.0f} "
+                f"(\\${w_lo}–\\${w_hi} per sq ft of floor). Walls are quoted per project from wall "
+                "length, glass, doors and power; ask for a real quote."
+            )
+
+        with st.expander("Second opinion: item by item (partner price books)"):
+            layer = _price_layer()
+            if layer is None:
+                st.caption(
+                    "Not loaded on this computer. Partner prices stay on one approved laptop, "
+                    "so this panel shows numbers only there. The main range above uses public "
+                    "data."
+                )
+            else:
+                bu = bottom_up(program, adjusted_inputs, layer, book)
+                st.metric("Item-by-item range", f"\\${bu.low:,.0f} – \\${bu.high:,.0f}")
+                st.dataframe(
+                    pd.DataFrame(
+                        [
+                            {"Item": ln.category, "Count": ln.count, "Priced from": ln.source}
+                            for ln in bu.lines
+                        ]
+                    ),
+                    hide_index=True,
+                    width="stretch",
+                )
+                st.caption(
+                    "Counts x list price x options x category discount. Kits per space type are "
+                    "our assumption; discounts come from a public cooperative contract and are "
+                    "not yet verified. Herman Miller lines only (no Knoll yet)."
+                )
 
         st.markdown("**Published bands vs this estimate (\\$/sf, before adjustments)**")
         st.dataframe(
@@ -380,10 +441,44 @@ with tab_sens:
 
 with tab_acc:
     scored, summary = _scores()
+    calib, floor = _calibration()
     st.write(
         "Scored against public projects with a known furniture total. **Headline** = awarded, "
         "furniture-only contracts. With so few, these numbers show the method works; they do "
         "not prove accuracy yet."
+    )
+    f1, f2, f3 = st.columns(3)
+    f1.metric("Noise floor", f"{floor['loo_median_abs_dev_pct']:.1f}%")
+    f2.metric("Winning bid vs typical bid", f"{floor['low_bid_vs_median_pct']:+.1f}%")
+    f3.metric("Public bid tabs", f"{floor['tabs']} tabs / {floor['bids']} bids")
+    st.caption(
+        "Noise floor: how far honest bids on the same spec differ. No estimate can beat it on "
+        "average, so a median error near 10% on 10+ projects is the stop line "
+        "(docs/accuracy-target.md)."
+    )
+    st.markdown("**Range quality (headline projects)**")
+    st.dataframe(
+        pd.DataFrame(
+            [
+                {
+                    "Method": c.variant,
+                    "n": c.n,
+                    "Inside range %": round(c.coverage_pct),
+                    "Median abs error %": round(c.median_abs_error_pct),
+                    "Interval score (lower is better)": round(c.mean_rel_interval_score, 2),
+                    "Under-quoted %": round(c.under_pct),
+                }
+                for c in calib
+            ]
+        ),
+        hide_index=True,
+        width="stretch",
+    )
+    st.caption(
+        "Interval score = range width plus a penalty for a miss, so vague and wrong both cost. "
+        "Reference = the other projects' \\$/sf. Estimates for 15 partner case studies are "
+        "frozen with a hash before their totals are known (data/public/"
+        "preregistered_estimates.csv)."
     )
     st.dataframe(
         pd.DataFrame(
@@ -403,7 +498,7 @@ with tab_acc:
     )
     variant = st.radio(
         "Show variant",
-        ["published", "adjusted", "informed", "calibrated"],
+        list(dict.fromkeys(s.variant for s in scored)),
         index=2,
         horizontal=True,
         key="variant",
@@ -438,6 +533,24 @@ with tab_src:
     st.markdown("**Benchmarks and assumptions**")
     st.dataframe(
         _csv("benchmarks.csv")[["metric", "scope", "low", "high", "value", "unit", "source_url"]],
+        column_config=link,
+        hide_index=True,
+        width="stretch",
+    )
+    st.markdown("**Public bid tabulations (noise floor)**")
+    st.dataframe(
+        _csv("bid_tabs.csv")[
+            [
+                "tab_id",
+                "public_body",
+                "year",
+                "state",
+                "bidder",
+                "total_usd",
+                "compliant",
+                "source_url",
+            ]
+        ],
         column_config=link,
         hide_index=True,
         width="stretch",
