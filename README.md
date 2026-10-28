@@ -39,6 +39,7 @@ uv sync                                      # install exact versions from uv.lo
 uv run pytest                                # tests
 uv run ruff check && uv run ruff format      # lint + format
 uv run streamlit run app/streamlit_app.py    # run the app locally
+uv run python -m aoi_budget.evaluate         # score the estimator on public projects
 ```
 
 Python 3.12 is managed by uv (ADR 0002), so no system or Homebrew Python is needed.

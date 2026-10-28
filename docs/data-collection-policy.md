@@ -16,3 +16,5 @@ Every number in the tool must trace to a URL and a date. These rules apply to an
 9. Downloaded files are untrusted input: parse with a library, never execute, no secrets in the
    downloader's environment, writes only to data/raw-public/.
 10. Retail sites (Wayfair, IKEA, Amazon, Office Depot, etc.) are out of scope (ADR 0003).
+
+Source-by-source status (collected, blocked and why, backlog): [public-data-register.md](public-data-register.md).
