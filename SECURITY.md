@@ -26,7 +26,7 @@ A secret that reached GitHub counts as compromised, **even if you delete the com
 - `.gitignore` blocks `.env`, keys, `data/raw/`, exports
 - Dependabot alerts and weekly updates
 - Branch rules on `main`: PR required, 1 approval, status checks pass, no force-push, no deletion
-- CODEOWNERS: security-sensitive files need the admin's review
+- CODEOWNERS: security-sensitive files need a review from the repo admin or Anas (either one)
 - Every member has 2FA on GitHub (required, not optional)
 - Least privilege: collaborators get write access; only the admin changes settings
 - AI agents are denied read access to `.env` and `data/raw/` (see `.claude/settings.json`)
