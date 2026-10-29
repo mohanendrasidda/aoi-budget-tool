@@ -1,0 +1,100 @@
+# Public sources for v0/v1. Checked 2026-10-06 unless noted. See docs/data-collection-policy.md.
+sources:
+  - id: aoi-site
+    name: AOI Corporation website
+    url: https://www.aoicorp.com
+    use: scope (AOI is a MillerKnoll Certified Dealer; Omaha HQ, Lincoln office 8320 Cody Dr)
+    method: read
+  - id: hm-gsa-pricebooks
+    name: Herman Miller GSA price books (one PDF per product line)
+    url_pattern: https://www.hermanmiller.com/content/dam/hermanmiller/documents/pricing/government/PB_GSA_{CODE}.pdf
+    known_codes: [EWT, AOS, SYL, LCS, NAU, BOA, ZEP, HWT, RVA, BAY, NGS, HCL, SPT, SHA, HHC, CWB]
+    example: https://www.hermanmiller.com/content/dam/hermanmiller/documents/pricing/government/PB_GSA_EWT.pdf
+    example_facts: "Everywhere Tables: list $1,039-$1,540 common sizes; GSA discount 73.8% (SIN 33721); effective 2025-10-06"
+    robots_checked: "2026-10-06: no Disallow for /content/dam, no crawl-delay"
+    method: polite PDF download + parse
+  - id: geiger-gsa-pricebooks
+    name: Geiger (MillerKnoll) GSA price books
+    url_pattern: https://www.geigerfurniture.com/content/dam/hermanmiller/documents/pricing/government/PB_GSA_{CODE}.pdf
+    known_codes: [CMP]
+    note: "From search results; not yet opened. Verify before use."
+    method: polite PDF download + parse
+  - id: cw-fitout-2026
+    name: Cushman & Wakefield Office Fit Out Cost Guide, Americas 2026 (furniture page)
+    url: https://digital.cushmanwakefield.com/fitoutcostguide-03-2026-amer-regional-en-content-pds-office/42-43/
+    method: read; values entered by hand into benchmarks.csv
+  - id: jll-fitout-2026
+    name: JLL U.S. & Canada Office Fit-Out Cost Guide (published 2026-05-13)
+    url: https://www.jll.com/en-us/insights/us-canada-office-fit-out-cost-guide-2025/
+    method: read; context only
+  - id: gsa-workspace-2012
+    name: GSA Workspace Utilization and Allocation Benchmark (July 2012)
+    url: https://distributedteams.mo.gov/wp-content/uploads/2020/10/Workplace-Utilization-and-Allocation-Benchmark-review.pdf
+    method: read; values entered by hand
+  - id: sourcewell-steelcase
+    name: Sourcewell office furniture contract, Steelcase pricing document
+    url: https://files.sourcewell.org/public/Shared%20Documents/Solicitations/10745/00005116/Additional%20Documents/Steelcase%20Sourcewell%20Pricing.pdf
+    note: "From search results; not yet opened. Discount structure reference only."
+    method: download, read
+  - id: omnia-millerknoll
+    name: OMNIA Partners office furniture contract (MillerKnoll), as described by LSU procurement
+    url: https://lsu.edu/administration/ofa/procurement/a-z-policies-procedures/hermanmiller.php
+    method: read; confirms co-op channel, no % published on that page
+  # Added 2026-10-14 from the public data-source research (see docs/data-collection-policy.md)
+  - id: steelcase-naspo-mo
+    name: Steelcase NASPO ValuePoint discount schedule, State of Missouri
+    url: https://steelcase.com/resources/documents/naspo-state-of-missouri-discount-schedule
+    method: read; discount bands entered by hand
+  - id: ne-contract-15378
+    name: State of Nebraska contract 15378 OC (Neutral Posture), incl. commercial pricing disclosure
+    url: https://das.nebraska.gov/materiel/purchasing/contracts/pdfs/15378(oc)awd.pdf
+    method: read; discount bands entered by hand
+  - id: af-furniture-cost-guide
+    name: US Air Force Furniture Cost Estimating Guide (2022), WBDG
+    url: https://www.wbdg.org/FFC/AF/AFCFS/AF-Furniture-Cost-Estimating-Guide.pdf
+    method: read; freight/install/handling percentages
+  - id: fred-ppi
+    name: BLS Producer Price Index, nonwood office furniture (PCU337214337214), via FRED
+    url: https://fred.stlouisfed.org/series/PCU337214337214
+    method: CSV download (fredgraph.csv?id=PCU337214337214), no key needed
+  - id: ne-dor-tax
+    name: Nebraska Department of Revenue, local sales and use tax rates
+    url: https://revenue.nebraska.gov/businesses/local-sales-and-use-tax-rates
+    method: read; verify rates each quarter
+# Collection note (2026-10-14): Herman Miller's Terms of Use prohibit automated downloading of site
+# content even where robots.txt allows the path, and Knoll's PDF host disallows all crawlers.
+# Fetch those price books manually, one at a time, or through AOI's dealer channel.
+  - id: nu-regents
+    name: University of Nebraska Board of Regents agendas with materials (program statements; Bids and Contracts)
+    url: https://nebraska.edu/regents/agendas-minutes
+    robots_checked: "2026-10-14: nebraska.edu disallows only /archive/; docs subdomain has no robots.txt"
+    method: read; values entered by hand into eval_projects.csv
+  - id: lebtown-palmyra
+    name: LebTown news, Palmyra Area School District admin offices (2026-09-08)
+    url: https://lebtown.com/2026/09/08/palmyra-area-school-district-one-step-closer-to-moving-to-new-admin-offices/
+    method: read; values entered by hand
+  - id: dsm-council
+    name: City of Des Moines council communications 24-249 and 25-265
+    url: https://councildocs.dsm.city/communications/2025/25-265.pdf
+    area_source: https://www.businessrecord.com/what-you-need-to-know-about-the-citys-new-administration-building/
+    method: read; values entered by hand
+  - id: manassas-park
+    name: City of Manassas Park staff report, City Hall furniture and IT purchase (2021-12-14)
+    url: https://cms7files.revize.com/manassasparkva/Agenda%20Item%20-%20OCM_City%20Hall%20Furniture%20and%20IT%20Purchase.pdf
+    method: read; unit prices entered by hand
+  - id: lawrence-ks
+    name: City of Lawrence KS city commission agenda summaries
+    url: https://assets.lawrenceks.org/agendas/cc/2019/01-08-19/pl_riverfront_furniture_cover_summary.html
+    method: read; values entered by hand
+  - id: iowa-regents
+    name: Board of Regents, State of Iowa, capital register (ISU, June 2023)
+    url: https://iowaregents.edu/media/cms/0623_PF_4__ISU_Register_93FCDB2FC837B.pdf
+    method: read; values entered by hand
+  - id: nscs-capital
+    name: Nebraska State College System, Capital Construction Quarterly Reports (board agenda items)
+    url: https://www.nscs.edu/_resources/e30d:s03rkd-27u/files/77095894z5056ceb1/_fn/5.8%20Capital%20Construction%20Quarterly%20Reports.pdf
+    method: downloaded with aoi_budget.collect.fetch (robots.txt checked); pdftotext; values entered by hand
+  - id: unm-scup-efficiency
+    name: University of New Mexico, Building Efficiency Ratio Guidelines (rev. 2007; averages SCUP project data)
+    url: https://pdc.unm.edu/assets/documents/Building%20Efficiency%20Ratio%20Guidelines.pdf
+    method: downloaded with aoi_budget.collect.fetch (robots.txt checked); pdftotext; values entered by hand

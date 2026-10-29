@@ -1,0 +1,12 @@
+period,index,kind,source_id,source_url,retrieved_at,notes
+2018,297.100,annual_avg,fred-ppi,https://fred.stlouisfed.org/series/PCU337214337214,2026-10-14,BLS PPI nonwood office furniture (PCU337214337214); mean of 12 monthly values
+2019,312.192,annual_avg,fred-ppi,https://fred.stlouisfed.org/series/PCU337214337214,2026-10-14,mean of 12 monthly values
+2020,325.367,annual_avg,fred-ppi,https://fred.stlouisfed.org/series/PCU337214337214,2026-10-14,mean of 12 monthly values
+2021,337.508,annual_avg,fred-ppi,https://fred.stlouisfed.org/series/PCU337214337214,2026-10-14,mean of 12 monthly values
+2022,379.160,annual_avg,fred-ppi,https://fred.stlouisfed.org/series/PCU337214337214,2026-10-14,mean of 12 monthly values
+2023,411.599,annual_avg,fred-ppi,https://fred.stlouisfed.org/series/PCU337214337214,2026-10-14,mean of 12 monthly values
+2024,422.286,annual_avg,fred-ppi,https://fred.stlouisfed.org/series/PCU337214337214,2026-10-14,mean of 12 monthly values
+2025,439.036,annual_avg,fred-ppi,https://fred.stlouisfed.org/series/PCU337214337214,2026-10-14,mean of 12 monthly values
+2025-12,451.561,month,fred-ppi,https://fred.stlouisfed.org/series/PCU337214337214,2026-10-14,C&W 2026 guide prices as of Dec 2025 (base period)
+2026,457.452,ytd_avg,fred-ppi,https://fred.stlouisfed.org/series/PCU337214337214,2026-10-14,mean of Jan-Aug 2026 (8 months)
+2026-08,460.823,month,fred-ppi,https://fred.stlouisfed.org/series/PCU337214337214,2026-10-14,latest month at retrieval

@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AOI Budget Tool</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@stlite/browser@1.10.0/build/stlite.css">
+<style>
+  body { margin: 0; background: #fff; font-family: system-ui, sans-serif; }
+  #loading { padding: 48px 16px; text-align: center; color: #444; }
+</style>
+</head>
+<body>
+<div id="root"><div id="loading"><h2>AOI Budget Tool</h2><p>Loading the estimator in your browser. The first visit takes 10 to 20 seconds.</p></div></div>
+<script type="module">
+import { mount } from "https://cdn.jsdelivr.net/npm/@stlite/browser@1.10.0/build/stlite.js";
+mount({
+  requirements: ["pandas", "pydantic", "pyyaml"],
+  entrypoint: "app/streamlit_app.py",
+  files: {
+        "app/aoi_budget/__init__.py": {
+                "url": "app/aoi_budget/__init__.py"
+        },
+        "app/aoi_budget/book.py": {
+                "url": "app/aoi_budget/book.py"
+        },
+        "app/aoi_budget/calibration.py": {
+                "url": "app/aoi_budget/calibration.py"
+        },
+        "app/aoi_budget/decompose.py": {
+                "url": "app/aoi_budget/decompose.py"
+        },
+        "app/aoi_budget/estimator.py": {
+                "url": "app/aoi_budget/estimator.py"
+        },
+        "app/aoi_budget/evaluate.py": {
+                "url": "app/aoi_budget/evaluate.py"
+        },
+        "app/aoi_budget/intake.py": {
+                "url": "app/aoi_budget/intake.py"
+        },
+        "app/aoi_budget/price_layer.py": {
+                "url": "app/aoi_budget/price_layer.py"
+        },
+        "app/aoi_budget/redact.py": {
+                "url": "app/aoi_budget/redact.py"
+        },
+        "app/aoi_budget/seller.py": {
+                "url": "app/aoi_budget/seller.py"
+        },
+        "app/aoi_budget/sensitivity.py": {
+                "url": "app/aoi_budget/sensitivity.py"
+        },
+        "app/streamlit_app.py": {
+                "url": "app/streamlit_app.py"
+        },
+        "data/public/benchmarks.csv": {
+                "url": "data/public/benchmarks.csv"
+        },
+        "data/public/bid_tabs.csv": {
+                "url": "data/public/bid_tabs.csv"
+        },
+        "data/public/eval_projects.csv": {
+                "url": "data/public/eval_projects.csv"
+        },
+        "data/public/ppi_office_furniture.csv": {
+                "url": "data/public/ppi_office_furniture.csv"
+        },
+        "data/public/prereg_inputs.csv": {
+                "url": "data/public/prereg_inputs.csv"
+        },
+        "data/public/preregistered_estimates.csv": {
+                "url": "data/public/preregistered_estimates.csv"
+        },
+        "data/public/sources.yaml": {
+                "url": "data/public/sources.yaml"
+        }
+}
+}, document.getElementById("root"));
+</script>
+</body>
+</html>
