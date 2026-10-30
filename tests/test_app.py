@@ -6,8 +6,11 @@ from streamlit.testing.v1 import AppTest
 APP = Path(__file__).resolve().parents[1] / "app" / "streamlit_app.py"
 
 
-def _run():
-    return AppTest.from_file(str(APP), default_timeout=30).run()
+def _run(expert: bool = False):
+    at = AppTest.from_file(str(APP), default_timeout=30).run()
+    if expert:
+        at.toggle(key="expert").set_value(True).run()
+    return at
 
 
 def test_app_renders_estimate_without_errors():
@@ -82,7 +85,7 @@ def test_injected_notes_cannot_set_a_price():
 
 
 def test_v0_method_ignores_adjustments():
-    at = _run()
+    at = _run(expert=True)
     at.radio(key="buyer").set_value("public").run()
     v1 = at.metric[0].value
     at.radio(key="method").set_value("Published band only (v0)").run()
@@ -101,7 +104,7 @@ def test_walls_allowance_is_separate_from_the_furniture_budget():
 
 
 def test_second_opinion_and_accuracy_render_with_or_without_partner_prices():
-    at = _run()
+    at = _run(expert=True)
     assert not at.exception
     assert any("Second opinion" in e.label for e in at.expander)
     assert any(m.label == "Noise floor" for m in at.metric)
@@ -113,7 +116,34 @@ def test_without_partner_prices_the_app_says_not_loaded(monkeypatch):
     monkeypatch.setattr(pl, "load_price_layer", lambda *a, **k: None)
     st.cache_resource.clear()  # earlier tests may have cached the real layer
     st.cache_data.clear()
-    at = _run()
+    at = _run(expert=True)
     assert not at.exception
     assert any("Not loaded on this computer" in c.value for c in at.caption)
     assert not any(m.label == "Item-by-item range" for m in at.metric)
+
+
+def test_seller_view_hides_expert_parts():
+    at = _run()
+    assert not at.exception
+    assert len(at.tabs) == 0
+    assert not any(r.key == "method" for r in at.radio)
+    assert not any("Second opinion" in e.label for e in at.expander)
+    assert not any(m.label == "Noise floor" for m in at.metric)
+    assert any(e.label == "More pricing options" for e in at.expander)
+
+
+def test_seller_view_shows_talking_points_questions_and_what_ifs():
+    at = _run()
+    md = " ".join(m.value for m in at.markdown)
+    assert "Roughly \\$" in md and "badge[" in md
+    assert "Biggest unknown" in md
+    assert any("If the client asks about…" in df.value.columns for df in at.dataframe)
+
+
+def test_typo_in_headcount_is_flagged_without_changing_the_range():
+    at = _run()
+    before = at.metric[0].value
+    at.number_input(key="heads").set_value(1_000).run()  # 12,000 sq ft for 1,000 people
+    assert not at.exception
+    assert any("very tight" in w.value for w in at.warning)
+    assert at.metric[0].value == before  # area-based range: the warning never edits a number

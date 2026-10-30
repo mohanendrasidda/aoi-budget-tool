@@ -1,7 +1,9 @@
 """Streamlit entry point. Run: uv run streamlit run app/streamlit_app.py
 
-Seller flow (#16): project -> space -> finish -> range, questions to ask, client summary,
-assumptions, designer hand-off. User text is only ever shown as plain text (st.code / st.text).
+Seller flow (#16): 1 scope -> 2 range (with typo checks) -> 3 what to say (talking points,
+what-ifs, questions, client summary, designer hand-off). Expert view adds the method choice,
+partner second opinion, assumptions table and the sensitivity / accuracy / sources tabs.
+User text is only ever shown as plain text (st.code / st.text).
 """
 
 import csv
@@ -20,16 +22,21 @@ from aoi_budget.price_layer import bottom_up, load_price_layer
 from aoi_budget.price_layer import score as score_bottom_up
 from aoi_budget.seller import (
     FINISH_LABEL,
+    FINISH_PLACEMENT,
     PEOPLE_PER_CONFERENCE,
     PEOPLE_PER_HUDDLE,
     PRIVATE_SHARE,
     PROJECT_TYPES,
     Program,
+    biggest_unknown,
     client_summary,
     default_headcount,
     handoff_items,
     next_questions,
+    sanity_checks,
     space_program,
+    talking_points,
+    what_ifs,
 )
 from aoi_budget.sensitivity import tornado
 
@@ -41,7 +48,7 @@ MARKETS = {
     "Tier 1 market": "US Tier 1",
 }
 AREA_BASES = {"Usable (USF)": "USF", "Rentable (RSF)": "RSF", "Gross (GSF)": "GSF"}
-FINISH_PLACEMENT = {"basic": "lower half", "standard": "middle half", "premium": "upper half"}
+BADGE = {"Published": "green", "Assumption": "orange", "From the client": "blue"}
 METHODS = {
     "Adjusted (v1)": "all sourced adjustments below",
     "Published band only (v0)": "band x finish x price level; ignores buyer, area basis, reuse, "
@@ -146,29 +153,33 @@ def _csv(name: str) -> pd.DataFrame:
 
 
 st.title("AOI Budget Tool")
+expert = st.toggle("Expert view (method, accuracy, sensitivity, sources)", key="expert")
 st.caption(
     f"v{aoi_budget.__version__} · Public-data estimate: every number comes from a published "
     "source or a labeled assumption. Partner prices appear only on the approved laptop, in the "
     "item-by-item second opinion."
 )
 
-tab_est, tab_sens, tab_acc, tab_src = st.tabs(
-    ["Estimate", "What moves it", "How accurate", "Sources"]
-)
+if expert:
+    tab_est, tab_sens, tab_acc, tab_src = st.tabs(
+        ["Estimate", "What moves it", "How accurate", "Sources"]
+    )
+else:  # seller view: one page, no tabs
+    tab_est = st.container()
 
 with tab_est:
     left, right = st.columns([5, 6], gap="large")
 
     with left:
-        st.subheader("1 · The project")
+        st.header("1 · Scope")
+        st.subheader("The project")
         label = st.text_input("Project label", value="Example: 2nd floor office", max_chars=80)
-        market = st.selectbox("Market", list(MARKETS), key="market")
         ptype = st.radio("Project type", PROJECT_TYPES, horizontal=True, key="ptype")
         reuse = 0
         if ptype == "Refresh":
             reuse = st.slider("Share of furniture reused (%)", 0, 75, step=5, key="reuse")
 
-        st.subheader("2 · The space")
+        st.subheader("The space")
         c1, c2 = st.columns(2)
         area = c1.number_input(
             "Square feet", min_value=500, max_value=500_000, step=500, key="area"
@@ -206,7 +217,7 @@ with tab_est:
             huddle_rooms=p[3].number_input("Huddle", 0, 500, suggested.huddle_rooms, key=f"hd-{k}"),
         )
 
-        st.subheader("3 · Finish and pricing")
+        st.subheader("Finish")
         finish = st.radio(
             "Finish level",
             list(FINISH_LABEL),
@@ -214,14 +225,21 @@ with tab_est:
             horizontal=True,
             key="finish",
         )
-        c3, c4 = st.columns(2)
-        buyer = c3.radio("Buyer", ["commercial", "public"], horizontal=True, key="buyer")
-        year = c4.selectbox("Purchase year", ["2026", "2027", "2028"], key="year")
-        tax = c3.selectbox("Sales tax", ["exempt", *book.tax_pct], index=2, key="tax")
-        adders = c4.checkbox("Include freight, install, handling", key="adders")
-        walls = st.checkbox("Show prefab walls (DIRTT) as a separate allowance", key="walls")
-        method = st.radio("Method", list(METHODS), horizontal=True, key="method")
-        st.caption(METHODS[method])
+        buyer = st.radio("Buyer", ["commercial", "public"], horizontal=True, key="buyer")
+        # Defaults fit a typical Lincoln/Omaha office, so sellers rarely need to open this.
+        more = st.container() if expert else st.expander("More pricing options")
+        with more:
+            market = st.selectbox("Market", list(MARKETS), key="market")
+            c3, c4 = st.columns(2)
+            year = c4.selectbox("Purchase year", ["2026", "2027", "2028"], key="year")
+            tax = c3.selectbox("Sales tax", ["exempt", *book.tax_pct], index=2, key="tax")
+            adders = c3.checkbox("Include freight, install, handling", key="adders")
+            walls = st.checkbox("Show prefab walls (DIRTT) as a separate allowance", key="walls")
+        if expert:
+            method = st.radio("Method", list(METHODS), horizontal=True, key="method")
+            st.caption(METHODS[method])
+        else:
+            method = next(iter(METHODS))
 
         st.subheader("Conversation notes")
         notes = st.text_area(
@@ -276,7 +294,7 @@ with tab_est:
     est = estimate(inputs, book)
 
     with right:
-        st.subheader("Preliminary furniture budget")
+        st.header("2 · Range")
         m1, m2 = st.columns(2)
         m1.metric("Budget range", f"\\${est.low:,.0f} – \\${est.high:,.0f}")
         m2.metric("Per sq ft", f"\\${est.psf_low:,.2f} – \\${est.psf_high:,.2f}")
@@ -285,6 +303,8 @@ with tab_est:
             + (f" · {reuse}% reused" if reuse and inputs.reuse_pct else "")
             + f" · {method}"
         )
+        for msg in sanity_checks(area, heads, heads_in > 0, program):
+            st.warning(msg)
 
         _, summary = _scores()
         inf = next((s for s in summary if s.variant == "informed"), None)
@@ -304,53 +324,36 @@ with tab_est:
                 "length, glass, doors and power; ask for a real quote."
             )
 
-        with st.expander("Second opinion: item by item (partner price books)"):
-            layer = _price_layer()
-            if layer is None:
-                st.caption(
-                    "Not loaded on this computer. Partner prices stay on one approved laptop, "
-                    "so this panel shows numbers only there. The main range above uses public "
-                    "data."
-                )
-            else:
-                bu = bottom_up(program, adjusted_inputs, layer, book)
-                st.metric("Item-by-item range", f"\\${bu.low:,.0f} – \\${bu.high:,.0f}")
-                st.dataframe(
-                    pd.DataFrame(
-                        [
-                            {"Item": ln.category, "Count": ln.count, "Priced from": ln.source}
-                            for ln in bu.lines
-                        ]
-                    ),
-                    hide_index=True,
-                    width="stretch",
-                )
-                st.caption(
-                    "Counts x list price x options x category discount. Kits per space type are "
-                    "our assumption; discounts come from a public cooperative contract and are "
-                    "not yet verified. Herman Miller lines only (no Knoll yet)."
-                )
-
-        st.markdown("**Published bands vs this estimate (\\$/sf, before adjustments)**")
-        st.dataframe(
-            pd.DataFrame(
-                [
-                    {
-                        "Market band": tier,
-                        "Low": lo,
-                        "High": hi,
-                        "Selected": "◀" if tier == MARKETS[market] else "",
-                    }
-                    for tier, (lo, hi) in sorted(book.bands.items())
-                ]
-            ),
-            hide_index=True,
-            width="stretch",
-        )
+        st.header("3 · What to say")
+        st.markdown("**Talking points** (the label says how firm each one is)")
+        for text, firmness in talking_points(est, heads, finish):
+            safe = text.replace("$", "\\$")  # a bare $ pair would render as LaTeX
+            st.markdown(f"- {safe} :{BADGE[firmness]}-badge[{firmness}]")
 
         st.markdown("**Ask next to narrow the range**")
+        top = biggest_unknown(tornado(inputs, book)[1])
+        if top:
+            top = top.replace("$", "\\$")
+            st.markdown(f"- **{top}**")
         for q in next_questions(ptype, heads_in > 0, heads):
             st.markdown(f"- {q}")
+
+        if not method.endswith("(v0)"):
+            st.markdown("**Quick what-ifs** (one change each, everything else the same)")
+            st.dataframe(
+                pd.DataFrame(
+                    [
+                        {
+                            "If the client asks about…": what,
+                            "Range": f"${alt.low:,.0f} – ${alt.high:,.0f}",
+                            "vs now": f"{(alt.mid - est.mid) / est.mid:+.0%}",
+                        }
+                        for what, alt in what_ifs(inputs, book)
+                    ]
+                ),
+                hide_index=True,
+                width="stretch",
+            )
 
         st.markdown("**Client-ready summary** (copy button at top right)")
         st.code(
@@ -359,52 +362,100 @@ with tab_est:
             wrap_lines=True,
         )
 
-        with st.expander("Assumptions and sources"):
-            band_lo, band_hi = book.bands[MARKETS[market]]
-            rows = [
-                {
-                    "Assumption": "Furniture cost band",
-                    "Value": f"${band_lo:.2f} – ${band_hi:.2f}/sf (Dec 2025)",
-                    "Source": book.sources["band"],
-                },
-                {
-                    "Assumption": "Finish placement",
-                    "Value": f"{FINISH_PLACEMENT[finish]} of band",
-                    "Source": "assumption",
-                },
-                *[
-                    {
-                        "Assumption": f.name,
-                        "Value": f"x {f.multiplier:.3f} · {f.note}",
-                        "Source": f.source_id,
-                    }
-                    for f in est.factors
-                ],
-                {
-                    "Assumption": "Sq ft per person",
-                    "Value": f"{book.usf_per_person:g} usable",
-                    "Source": book.sources["usf_per_person"],
-                },
-                {
-                    "Assumption": "Private office share",
-                    "Value": f"{PRIVATE_SHARE[mix]:.0%} ({mix})",
-                    "Source": "assumption",
-                },
-                {
-                    "Assumption": "Meeting rooms",
-                    "Value": f"1 conference / {PEOPLE_PER_CONFERENCE} people, "
-                    f"1 huddle / {PEOPLE_PER_HUDDLE}",
-                    "Source": "assumption",
-                },
-            ]
-            st.dataframe(pd.DataFrame(rows), hide_index=True, width="stretch")
-
         with st.expander("Hand-off to design"):
             items = handoff_items(area, heads, heads_in > 0, program, finish, notes)
             for i, (item, done) in enumerate(items):
                 st.checkbox(item, value=done, key=f"handoff-{i}-{done}")
             if notes.strip():
                 st.text(notes)
+
+        if expert:
+            with st.expander("Second opinion: item by item (partner price books)"):
+                layer = _price_layer()
+                if layer is None:
+                    st.caption(
+                        "Not loaded on this computer. Partner prices stay on one approved "
+                        "laptop, so this panel shows numbers only there. The main range above "
+                        "uses public data."
+                    )
+                else:
+                    bu = bottom_up(program, adjusted_inputs, layer, book)
+                    st.metric("Item-by-item range", f"\\${bu.low:,.0f} – \\${bu.high:,.0f}")
+                    st.dataframe(
+                        pd.DataFrame(
+                            [
+                                {"Item": ln.category, "Count": ln.count, "Priced from": ln.source}
+                                for ln in bu.lines
+                            ]
+                        ),
+                        hide_index=True,
+                        width="stretch",
+                    )
+                    st.caption(
+                        "Counts x list price x options x category discount. Kits per space type "
+                        "are our assumption; discounts come from a public cooperative contract "
+                        "and are not yet verified. Herman Miller lines only (no Knoll yet)."
+                    )
+
+            st.markdown("**Published bands vs this estimate (\\$/sf, before adjustments)**")
+            st.dataframe(
+                pd.DataFrame(
+                    [
+                        {
+                            "Market band": tier,
+                            "Low": lo,
+                            "High": hi,
+                            "Selected": "◀" if tier == MARKETS[market] else "",
+                        }
+                        for tier, (lo, hi) in sorted(book.bands.items())
+                    ]
+                ),
+                hide_index=True,
+                width="stretch",
+            )
+
+            with st.expander("Assumptions and sources"):
+                band_lo, band_hi = book.bands[MARKETS[market]]
+                rows = [
+                    {
+                        "Assumption": "Furniture cost band",
+                        "Value": f"${band_lo:.2f} – ${band_hi:.2f}/sf (Dec 2025)",
+                        "Source": book.sources["band"],
+                    },
+                    {
+                        "Assumption": "Finish placement",
+                        "Value": f"{FINISH_PLACEMENT[finish]} of band",
+                        "Source": "assumption",
+                    },
+                    *[
+                        {
+                            "Assumption": f.name,
+                            "Value": f"x {f.multiplier:.3f} · {f.note}",
+                            "Source": f.source_id,
+                        }
+                        for f in est.factors
+                    ],
+                    {
+                        "Assumption": "Sq ft per person",
+                        "Value": f"{book.usf_per_person:g} usable",
+                        "Source": book.sources["usf_per_person"],
+                    },
+                    {
+                        "Assumption": "Private office share",
+                        "Value": f"{PRIVATE_SHARE[mix]:.0%} ({mix})",
+                        "Source": "assumption",
+                    },
+                    {
+                        "Assumption": "Meeting rooms",
+                        "Value": f"1 conference / {PEOPLE_PER_CONFERENCE} people, "
+                        f"1 huddle / {PEOPLE_PER_HUDDLE}",
+                        "Source": "assumption",
+                    },
+                ]
+                st.dataframe(pd.DataFrame(rows), hide_index=True, width="stretch")
+
+if not expert:  # seller view ends here; the tabs below are for the team
+    st.stop()
 
 with tab_sens:
     base_mid, swings = tornado(inputs, book)
